@@ -434,8 +434,11 @@ export default function BruttoNettoRechner() {
 
         {/* Info Card */}
         <Card className="mt-8 shadow-sm border border-gray-200 bg-white">
-          <CardHeader className="bg-gray-100 border-b border-gray-200">
-            <CardTitle className="text-gray-900 font-semibold not-italic">📊 Steuerinformationen 2025</CardTitle>
+          <CardHeader className="bg-[#0071C5] text-white rounded-t-lg px-5 py-3 -mt-6 mx-0">
+            <CardTitle className="flex items-center gap-2 font-semibold">
+              <span>📊</span>
+              Steuerinformationen 2025
+            </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
             <div className="grid md:grid-cols-2 gap-8 text-sm">
