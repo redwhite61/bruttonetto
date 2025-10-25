@@ -23,19 +23,23 @@ interface ConfigPayload {
 }
 
 const CONFIG_DESCRIPTIONS: Record<ConfigKey, string> = {
-  states: 'Bundesländer ve kilise vergisi oranları. Listeye yeni eyalet ekleyebilir veya oranları güncelleyebilirsiniz.',
-  taxClasses: 'Steuerklassen adları ve açıklamaları. Dropdown seçenekleri burada yönetilir.',
-  socialInsurance: 'Çalışan payı sosyal sigorta oranları. Etiket ve yüzde değerlerini düzenleyin.',
-  infoSections: 'Landing sayfasında görünen bilgi kartları. Başlıkları ve madde içeriklerini yönetin.',
-  taxSettings: 'Hesaplama motorunun kullandığı temel vergi parametreleri.',
+  states:
+    'Bundesländer mit Kirchensteuersätzen. Fügen Sie neue Bundesländer hinzu oder passen Sie die Sätze an.',
+  taxClasses:
+    'Bezeichnungen und Beschreibungen der Steuerklassen. Diese Einträge steuern die Dropdown-Auswahl.',
+  socialInsurance:
+    'Arbeitnehmeranteile der Sozialversicherungen. Bearbeiten Sie Bezeichnungen und Prozentsätze.',
+  infoSections:
+    'Infokarten der Landingpage. Verwalten Sie Überschriften und Listeninhalte.',
+  taxSettings: 'Grundlegende Steuerparameter für die Berechnung.',
 }
 
 const TITLE_MAP: Record<ConfigKey, string> = {
   states: 'Bundesländer',
   taxClasses: 'Steuerklassen',
   socialInsurance: 'Sozialversicherungen',
-  infoSections: 'Bilgi Kartları',
-  taxSettings: 'Vergi Parametreleri',
+  infoSections: 'Infokarten',
+  taxSettings: 'Steuerparameter',
 }
 
 type SectionStatus = {
@@ -112,7 +116,7 @@ export default function AdminConfigPage() {
       setDirtyKeys((prev) => prev.filter((dirtyKey) => dirtyKey !== key))
       setStatus((prev) => ({
         ...prev,
-        [key]: { success: 'Güncellendi' },
+        [key]: { success: 'Erfolgreich gespeichert' },
       }))
     } catch (error) {
       setStatus((prev) => ({
@@ -322,7 +326,7 @@ export default function AdminConfigPage() {
       return <p className="text-xs text-emerald-600">{entryStatus.success}</p>
     }
     if (dirtyKeys.includes(key)) {
-      return <p className="text-xs text-slate-500">Kaydedilmemiş değişiklikler var</p>
+      return <p className="text-xs text-slate-500">Es gibt ungespeicherte Änderungen</p>
     }
     return null
   }
@@ -331,9 +335,9 @@ export default function AdminConfigPage() {
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
       <div className="mx-auto max-w-5xl space-y-6">
         <header className="space-y-2">
-          <h1 className="text-3xl font-semibold text-slate-900">Admin Konfigürasyon Paneli</h1>
+          <h1 className="text-3xl font-semibold text-slate-900">Admin-Konfigurationsbereich</h1>
           <p className="text-sm text-slate-600">
-            Vergi oranlarını, kesinti yüzdelerini ve bilgi kartı metinlerini bu panelden güncelleyebilirsiniz.
+            Aktualisieren Sie Steuersätze, Abzüge und Infotexte zentral in diesem Bereich.
           </p>
         </header>
 
@@ -341,7 +345,7 @@ export default function AdminConfigPage() {
 
         {loading ? (
           <div className="flex items-center justify-center py-20 text-slate-500">
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Konfigürasyon yükleniyor...
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Konfiguration wird geladen ...
           </div>
         ) : (
           <div className="grid gap-6">
@@ -361,25 +365,25 @@ export default function AdminConfigPage() {
                     >
                       <div className="grid gap-4 md:grid-cols-3">
                         <div className="space-y-2">
-                          <Label htmlFor={`state-label-${index}`}>Görünen ad</Label>
+                          <Label htmlFor={`state-label-${index}`}>Angezeigter Name</Label>
                           <Input
                             id={`state-label-${index}`}
                             value={state.label}
                             onChange={(event) => updateStateEntry(index, 'label', event.target.value)}
-                            placeholder="Örn. Bayern"
+                            placeholder="z. B. Bayern"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor={`state-value-${index}`}>Sistem anahtarı</Label>
+                          <Label htmlFor={`state-value-${index}`}>Systemschlüssel</Label>
                           <Input
                             id={`state-value-${index}`}
                             value={state.value}
                             onChange={(event) => updateStateEntry(index, 'value', event.target.value)}
-                            placeholder="Örn. bayern"
+                            placeholder="z. B. bayern"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor={`state-rate-${index}`}>Kilise vergisi (%)</Label>
+                          <Label htmlFor={`state-rate-${index}`}>Kirchensteuer (%)</Label>
                           <Input
                             id={`state-rate-${index}`}
                             type="number"
@@ -398,7 +402,7 @@ export default function AdminConfigPage() {
                           className="text-red-600 hover:text-red-700"
                           onClick={() => removeStateEntry(index)}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" /> Sil
+                          <Trash2 className="mr-2 h-4 w-4" /> Löschen
                         </Button>
                       </div>
                     </div>
@@ -408,7 +412,7 @@ export default function AdminConfigPage() {
                   <div>{renderStatus('states')}</div>
                   <div className="flex items-center gap-2">
                     <Button type="button" variant="outline" onClick={addStateEntry}>
-                      <Plus className="mr-2 h-4 w-4" /> Eyalet ekle
+                      <Plus className="mr-2 h-4 w-4" /> Bundesland hinzufügen
                     </Button>
                     <Button
                       onClick={() => handleSave('states')}
@@ -417,11 +421,11 @@ export default function AdminConfigPage() {
                     >
                       {savingKey === 'states' ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Kaydediliyor...
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Wird gespeichert ...
                         </>
                       ) : (
                         <>
-                          <Save className="mr-2 h-4 w-4" /> Kaydet
+                          <Save className="mr-2 h-4 w-4" /> Speichern
                         </>
                       )}
                     </Button>
@@ -446,25 +450,25 @@ export default function AdminConfigPage() {
                     >
                       <div className="grid gap-4 md:grid-cols-3">
                         <div className="space-y-2">
-                          <Label htmlFor={`taxclass-label-${index}`}>Görünen ad</Label>
+                          <Label htmlFor={`taxclass-label-${index}`}>Angezeigter Name</Label>
                           <Input
                             id={`taxclass-label-${index}`}
                             value={taxClass.label}
                             onChange={(event) => updateTaxClassEntry(index, 'label', event.target.value)}
-                            placeholder="Örn. Steuerklasse 1"
+                            placeholder="z. B. Steuerklasse 1"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor={`taxclass-value-${index}`}>Sistem anahtarı</Label>
+                          <Label htmlFor={`taxclass-value-${index}`}>Systemschlüssel</Label>
                           <Input
                             id={`taxclass-value-${index}`}
                             value={taxClass.value}
                             onChange={(event) => updateTaxClassEntry(index, 'value', event.target.value)}
-                            placeholder="Örn. 1"
+                            placeholder="z. B. 1"
                           />
                         </div>
                         <div className="space-y-2 md:col-span-3">
-                          <Label htmlFor={`taxclass-description-${index}`}>Açıklama</Label>
+                          <Label htmlFor={`taxclass-description-${index}`}>Beschreibung</Label>
                           <Textarea
                             id={`taxclass-description-${index}`}
                             value={taxClass.description}
@@ -480,7 +484,7 @@ export default function AdminConfigPage() {
                           className="text-red-600 hover:text-red-700"
                           onClick={() => removeTaxClassEntry(index)}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" /> Sil
+                          <Trash2 className="mr-2 h-4 w-4" /> Löschen
                         </Button>
                       </div>
                     </div>
@@ -490,7 +494,7 @@ export default function AdminConfigPage() {
                   <div>{renderStatus('taxClasses')}</div>
                   <div className="flex items-center gap-2">
                     <Button type="button" variant="outline" onClick={addTaxClassEntry}>
-                      <Plus className="mr-2 h-4 w-4" /> Steuerklasse ekle
+                      <Plus className="mr-2 h-4 w-4" /> Steuerklasse hinzufügen
                     </Button>
                     <Button
                       onClick={() => handleSave('taxClasses')}
@@ -499,11 +503,11 @@ export default function AdminConfigPage() {
                     >
                       {savingKey === 'taxClasses' ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Kaydediliyor...
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Wird gespeichert ...
                         </>
                       ) : (
                         <>
-                          <Save className="mr-2 h-4 w-4" /> Kaydet
+                          <Save className="mr-2 h-4 w-4" /> Speichern
                         </>
                       )}
                     </Button>
@@ -526,7 +530,7 @@ export default function AdminConfigPage() {
                     return (
                       <div key={key} className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                         <div className="space-y-2">
-                          <Label htmlFor={`social-label-${key}`}>Etiket</Label>
+                          <Label htmlFor={`social-label-${key}`}>Bezeichnung</Label>
                           <Input
                             id={`social-label-${key}`}
                             value={entry.label}
@@ -534,7 +538,7 @@ export default function AdminConfigPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor={`social-rate-${key}`}>Çalışan payı (%)</Label>
+                          <Label htmlFor={`social-rate-${key}`}>Arbeitnehmeranteil (%)</Label>
                           <Input
                             id={`social-rate-${key}`}
                             type="number"
@@ -558,11 +562,11 @@ export default function AdminConfigPage() {
                   >
                     {savingKey === 'socialInsurance' ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Kaydediliyor...
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Wird gespeichert ...
                       </>
                     ) : (
                       <>
-                        <Save className="mr-2 h-4 w-4" /> Kaydet
+                        <Save className="mr-2 h-4 w-4" /> Speichern
                       </>
                     )}
                   </Button>
@@ -583,7 +587,7 @@ export default function AdminConfigPage() {
                     <div key={`${section.id}-${sectionIndex}`} className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                          <Label htmlFor={`info-title-${sectionIndex}`}>Başlık</Label>
+                          <Label htmlFor={`info-title-${sectionIndex}`}>Titel</Label>
                           <Input
                             id={`info-title-${sectionIndex}`}
                             value={section.title}
@@ -600,14 +604,14 @@ export default function AdminConfigPage() {
                         </div>
                       </div>
                       <div className="space-y-3">
-                        <Label>Madde listesi</Label>
+                        <Label>Listenpunkte</Label>
                         <div className="space-y-3">
                           {section.items.map((item, itemIndex) => (
                             <div key={`${sectionIndex}-${itemIndex}`} className="flex items-start gap-2">
                               <Input
                                 value={item}
                                 onChange={(event) => updateInfoSectionItem(sectionIndex, itemIndex, event.target.value)}
-                                placeholder="Bilgi maddesi"
+                                placeholder="Listenpunkt"
                               />
                               <Button
                                 type="button"
@@ -620,7 +624,7 @@ export default function AdminConfigPage() {
                             </div>
                           ))}
                           <Button type="button" variant="outline" onClick={() => addInfoSectionItem(sectionIndex)}>
-                            <Plus className="mr-2 h-4 w-4" /> Madde ekle
+                            <Plus className="mr-2 h-4 w-4" /> Eintrag hinzufügen
                           </Button>
                         </div>
                       </div>
@@ -631,7 +635,7 @@ export default function AdminConfigPage() {
                           className="text-red-600 hover:text-red-700"
                           onClick={() => removeInfoSection(sectionIndex)}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" /> Kartı sil
+                          <Trash2 className="mr-2 h-4 w-4" /> Karte löschen
                         </Button>
                       </div>
                     </div>
@@ -641,7 +645,7 @@ export default function AdminConfigPage() {
                   <div>{renderStatus('infoSections')}</div>
                   <div className="flex items-center gap-2">
                     <Button type="button" variant="outline" onClick={addInfoSection}>
-                      <Plus className="mr-2 h-4 w-4" /> Bilgi kartı ekle
+                      <Plus className="mr-2 h-4 w-4" /> Infokarte hinzufügen
                     </Button>
                     <Button
                       onClick={() => handleSave('infoSections')}
@@ -650,11 +654,11 @@ export default function AdminConfigPage() {
                     >
                       {savingKey === 'infoSections' ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Kaydediliyor...
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Wird gespeichert ...
                         </>
                       ) : (
                         <>
-                          <Save className="mr-2 h-4 w-4" /> Kaydet
+                          <Save className="mr-2 h-4 w-4" /> Speichern
                         </>
                       )}
                     </Button>
@@ -683,7 +687,7 @@ export default function AdminConfigPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="tax-single">Alleinerziehenden ek muafiyet (€)</Label>
+                    <Label htmlFor="tax-single">Entlastungsbetrag Alleinerziehende (€)</Label>
                     <Input
                       id="tax-single"
                       type="number"
@@ -693,7 +697,7 @@ export default function AdminConfigPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="tax-married">Eş çarpanı</Label>
+                    <Label htmlFor="tax-married">Faktor Verheiratete</Label>
                     <Input
                       id="tax-married"
                       type="number"
@@ -713,11 +717,11 @@ export default function AdminConfigPage() {
                   >
                     {savingKey === 'taxSettings' ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Kaydediliyor...
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Wird gespeichert ...
                       </>
                     ) : (
                       <>
-                        <Save className="mr-2 h-4 w-4" /> Kaydet
+                        <Save className="mr-2 h-4 w-4" /> Speichern
                       </>
                     )}
                   </Button>
@@ -729,17 +733,17 @@ export default function AdminConfigPage() {
 
         <Card className="border border-dashed border-slate-300 bg-white/70">
           <CardHeader>
-            <CardTitle className="text-base">Yapı hakkında kısa not</CardTitle>
+            <CardTitle className="text-base">Hinweis zur Datenpflege</CardTitle>
             <CardDescription className="text-xs">
-              Değişiklikler kaydedildikten sonra API üzerinden anında kullanılabilir. Canlı ortamda bu sayfayı mutlaka kimlik doğrulama ile koruyun.
+              Nach dem Speichern stehen alle Änderungen sofort über die API zur Verfügung. Schützen Sie diesen Bereich in produktiven Umgebungen mit einer Anmeldung.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-xs text-slate-500 space-y-2">
             <p>
-              Tüm alanlar sayısal doğrulama ile gelir; lütfen oranları yüzde şeklinde girin. Boş bıraktığınız değerler hesaplamayı etkileyebilir.
+              Alle Felder besitzen Validierungen; tragen Sie Prozentwerte bitte als Zahlen ein. Leere Werte können die Berechnung beeinflussen.
             </p>
             <p>
-              Varsayılan değerlere dönmek için ilgili karttaki alanları temizleyip kaydedebilirsiniz.
+              Um auf Standardwerte zurückzugehen, löschen Sie die Inhalte im jeweiligen Abschnitt und speichern Sie erneut.
             </p>
           </CardContent>
         </Card>
