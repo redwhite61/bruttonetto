@@ -143,7 +143,7 @@ export default function BruttoNettoRechner() {
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Brutto-Netto Rechner</h1>
           </div>
-          <p className="text-gray-600 max-w-2xl mx-auto">🇩🇪 Almanya 2025 – Güncel Brutto-Netto Hesaplama</p>
+          <p className="text-gray-600 max-w-2xl mx-auto">🇩🇪 Deutschland 2025 – Aktuelle Brutto-Netto-Berechnung</p>
           <p className="text-gray-500 mt-1">Präzise Gehaltsberechnung mit aktuellen Steuersätzen</p>
           {configError && (
             <p className="mt-3 text-sm text-red-500">{configError}</p>
