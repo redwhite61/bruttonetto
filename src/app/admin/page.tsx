@@ -539,6 +539,9 @@ export default function AdminConfigPage() {
               </AccordionTrigger>
               <AccordionContent className="px-5 pb-6">
                 <div className="space-y-5 pt-4">
+                  <p className="text-sm text-slate-500">
+                    Hinweis: Kirchensteuer-Sätze werden im Abschnitt „Bundesländer“ pro Bundesland gepflegt.
+                  </p>
                   <div className="grid gap-4 md:grid-cols-2">
                     {Object.entries(config.socialInsurance).map(([key, insurance]) => (
                       <div key={key} className="space-y-2 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
