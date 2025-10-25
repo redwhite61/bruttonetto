@@ -8,6 +8,8 @@ export interface AppConfigTaxClass {
   value: string
   label: string
   description: string
+  extraDeductionPercent: number
+  allowanceAmount: number
 }
 
 export interface AppConfigInfoSection {
@@ -71,12 +73,48 @@ export const defaultAppConfig: AppConfig = {
     { value: 'thueringen', label: 'Thüringen', churchTaxRate: 9 },
   ],
   taxClasses: [
-    { value: '1', label: 'Steuerklasse 1', description: 'Grundfreibetrag 11.604 € / Jahr' },
-    { value: '2', label: 'Steuerklasse 2', description: 'Zusätzliche Entlastung 1.308 € / Jahr' },
-    { value: '3', label: 'Steuerklasse 3', description: 'Doppelter Grundfreibetrag für Verheiratete' },
-    { value: '4', label: 'Steuerklasse 4', description: 'Einzelveranlagung für Verheiratete' },
-    { value: '5', label: 'Steuerklasse 5', description: 'Niedrigeres Einkommen in der Ehe' },
-    { value: '6', label: 'Steuerklasse 6', description: 'Zweitjob oder Nebentätigkeit' },
+    {
+      value: '1',
+      label: 'Steuerklasse 1',
+      description: 'Grundfreibetrag 11.604 € / Jahr',
+      extraDeductionPercent: 0,
+      allowanceAmount: 0,
+    },
+    {
+      value: '2',
+      label: 'Steuerklasse 2',
+      description: 'Zusätzliche Entlastung 1.308 € / Jahr',
+      extraDeductionPercent: 0,
+      allowanceAmount: 0,
+    },
+    {
+      value: '3',
+      label: 'Steuerklasse 3',
+      description: 'Doppelter Grundfreibetrag für Verheiratete',
+      extraDeductionPercent: 0,
+      allowanceAmount: 0,
+    },
+    {
+      value: '4',
+      label: 'Steuerklasse 4',
+      description: 'Einzelveranlagung für Verheiratete',
+      extraDeductionPercent: 0,
+      allowanceAmount: 0,
+    },
+    {
+      value: '5',
+      label: 'Steuerklasse 5',
+      description: 'Niedrigeres Einkommen in der Ehe',
+      extraDeductionPercent: 0,
+      allowanceAmount: 0,
+    },
+    {
+      value: '6',
+      label: 'Steuerklasse 6',
+      description: 'Zweitjob oder Nebentätigkeit',
+      extraDeductionPercent: 0,
+      allowanceAmount: 0,
+    },
   ],
   socialInsurance: {
     pension: { label: 'Rentenversicherung', employeeRate: 9.3 },
@@ -147,13 +185,37 @@ export function buildAppConfig(overrides?: ConfigOverrides): AppConfig {
         break
       case 'taxClasses':
         if (Array.isArray(value)) {
-          const parsed = value.filter((item): item is AppConfigTaxClass =>
-            typeof item === 'object' &&
-            item !== null &&
-            typeof (item as AppConfigTaxClass).value === 'string' &&
-            typeof (item as AppConfigTaxClass).label === 'string' &&
-            typeof (item as AppConfigTaxClass).description === 'string'
-          )
+          const parsed = value
+            .map((item) => {
+              if (typeof item !== 'object' || item === null) {
+                return null
+              }
+
+              const candidate = item as Partial<AppConfigTaxClass>
+              if (
+                typeof candidate.value !== 'string' ||
+                typeof candidate.label !== 'string' ||
+                typeof candidate.description !== 'string'
+              ) {
+                return null
+              }
+
+              return {
+                value: candidate.value,
+                label: candidate.label,
+                description: candidate.description,
+                extraDeductionPercent:
+                  typeof candidate.extraDeductionPercent === 'number'
+                    ? candidate.extraDeductionPercent
+                    : 0,
+                allowanceAmount:
+                  typeof candidate.allowanceAmount === 'number'
+                    ? candidate.allowanceAmount
+                    : 0,
+              }
+            })
+            .filter((item): item is AppConfigTaxClass => item !== null)
+
           if (parsed.length > 0) {
             base.taxClasses = parsed
           }

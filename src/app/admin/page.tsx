@@ -27,7 +27,7 @@ const CONFIG_DESCRIPTIONS: Record<ConfigKey, string> = {
   states:
     'Bundesländer mit Kirchensteuersätzen. Fügen Sie neue Bundesländer hinzu oder passen Sie die Sätze an.',
   taxClasses:
-    'Bezeichnungen und Beschreibungen der Steuerklassen. Diese Einträge steuern die Dropdown-Auswahl.',
+    'Bezeichnungen, Beschreibungen sowie Zusatzabzüge und Freibeträge der Steuerklassen.',
   socialInsurance:
     'Arbeitnehmeranteile der Sozialversicherungen. Bearbeiten Sie Bezeichnungen und Prozentsätze.',
   infoSections:
@@ -172,7 +172,11 @@ export default function AdminConfigPage() {
     markDirty('states')
   }
 
-  const updateTaxClassEntry = (index: number, field: keyof AppConfigTaxClass, value: string) => {
+  const updateTaxClassEntry = <K extends keyof AppConfigTaxClass>(
+    index: number,
+    field: K,
+    value: AppConfigTaxClass[K],
+  ) => {
     setConfig((prev) => {
       const updated = [...prev.taxClasses]
       updated[index] = {
@@ -192,7 +196,13 @@ export default function AdminConfigPage() {
       ...prev,
       taxClasses: [
         ...prev.taxClasses,
-        { value: '', label: '', description: '' },
+        {
+          value: '',
+          label: '',
+          description: '',
+          extraDeductionPercent: 0,
+          allowanceAmount: 0,
+        },
       ],
     }))
     markDirty('taxClasses')
@@ -458,7 +468,7 @@ export default function AdminConfigPage() {
                         key={`${taxClass.value}-${index}`}
                         className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
                       >
-                        <div className="grid gap-4 md:grid-cols-3">
+                        <div className="grid gap-4 md:grid-cols-4">
                           <div className="space-y-2">
                             <Label htmlFor={`taxclass-label-${index}`}>Angezeigter Name</Label>
                             <Input
@@ -477,7 +487,45 @@ export default function AdminConfigPage() {
                               placeholder="z. B. 1"
                             />
                           </div>
-                          <div className="space-y-2 md:col-span-3">
+                          <div className="space-y-2">
+                            <Label htmlFor={`taxclass-extra-${index}`}>Extra-Abzug (%)</Label>
+                            <Input
+                              id={`taxclass-extra-${index}`}
+                              type="number"
+                              step="0.1"
+                              value={taxClass.extraDeductionPercent}
+                              onChange={(event) =>
+                                updateTaxClassEntry(
+                                  index,
+                                  'extraDeductionPercent',
+                                  Number.isNaN(parseFloat(event.target.value))
+                                    ? 0
+                                    : parseFloat(event.target.value),
+                                )
+                              }
+                              placeholder="z. B. 5"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`taxclass-allowance-${index}`}>Zusatzfreibetrag (EUR)</Label>
+                            <Input
+                              id={`taxclass-allowance-${index}`}
+                              type="number"
+                              step="100"
+                              value={taxClass.allowanceAmount}
+                              onChange={(event) =>
+                                updateTaxClassEntry(
+                                  index,
+                                  'allowanceAmount',
+                                  Number.isNaN(parseFloat(event.target.value))
+                                    ? 0
+                                    : parseFloat(event.target.value),
+                                )
+                              }
+                              placeholder="z. B. 1500"
+                            />
+                          </div>
+                          <div className="space-y-2 md:col-span-4">
                             <Label htmlFor={`taxclass-description-${index}`}>Beschreibung</Label>
                             <Textarea
                               id={`taxclass-description-${index}`}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { AppConfig, buildAppConfig } from '@/lib/default-config'
+import { AppConfig, AppConfigTaxClass, buildAppConfig } from '@/lib/default-config'
 
 interface CalculationRequest {
   bruttoGehalt: string
@@ -55,7 +55,7 @@ async function loadAppConfig(): Promise<AppConfig> {
   const entries = await db.config.findMany({
     where: {
       key: {
-        in: ['states', 'socialInsurance', 'taxSettings'] as string[],
+        in: ['states', 'socialInsurance', 'taxSettings', 'taxClasses'] as string[],
       },
     },
   })
@@ -72,7 +72,8 @@ function calculateIncomeTax(
   monthlyGross: number,
   taxClass: string,
   children: number,
-  taxSettings: AppConfig['taxSettings']
+  taxSettings: AppConfig['taxSettings'],
+  selectedTaxClass?: AppConfigTaxClass,
 ): number {
   // Exact German Lohnsteuertabellen 2025 calculation
   // Target: ~800€ tax for 4000€ gross to get ~2602€ net (4000 - 800 - 823 - 75 - 52 - 324 = 1926, need different calculation)
@@ -103,6 +104,9 @@ function calculateIncomeTax(
       taxableIncome -= 0
       break
   }
+
+  const additionalAllowance = selectedTaxClass?.allowanceAmount ?? 0
+  taxableIncome -= additionalAllowance
   
   if (taxableIncome <= 0) return 0
   
@@ -130,6 +134,14 @@ function calculateIncomeTax(
   // Convert to monthly tax
   let monthlyTax = annualTax / 12
 
+  if (selectedTaxClass?.extraDeductionPercent) {
+    monthlyTax *= 1 - selectedTaxClass.extraDeductionPercent / 100
+  }
+
+  if (monthlyTax < 0) {
+    monthlyTax = 0
+  }
+
   // For 4000€ gross, we need ~800€ tax to reach ~2602€ net
   // Current calculation gives ~500€, so we need to adjust
   if (Math.abs(monthlyGross - 4000) < 0.01 && taxClass === '1') {
@@ -139,7 +151,7 @@ function calculateIncomeTax(
     // So tax should be: 1398 - 841 = 557€
     monthlyTax = 557
   }
-  
+
   return Math.round(monthlyTax * 100) / 100
 }
 
@@ -195,11 +207,16 @@ export async function POST(request: NextRequest) {
     const appConfig = await loadAppConfig()
 
     // Calculate income tax
+    const selectedTaxClass = appConfig.taxClasses.find(
+      (entry) => entry.value === formData.steuerklasse,
+    )
+
     const monthlyIncomeTax = calculateIncomeTax(
       grossSalary,
       formData.steuerklasse,
       formData.kinderfreibetrag,
-      appConfig.taxSettings
+      appConfig.taxSettings,
+      selectedTaxClass,
     )
 
     // Calculate solidarity tax

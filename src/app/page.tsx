@@ -204,14 +204,29 @@ export default function BruttoNettoRechner() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {appConfig.taxClasses.map((klasse) => (
-                      <SelectItem key={klasse.value} value={klasse.value}>
-                        <div className="flex flex-col">
-                          <span>{klasse.label}</span>
-                          <span className="text-xs text-gray-500">{klasse.description}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {appConfig.taxClasses.map((klasse) => {
+                      const details: string[] = [klasse.description]
+                      if (klasse.allowanceAmount) {
+                        details.push(
+                          `Zusatzfreibetrag ${klasse.allowanceAmount.toLocaleString('de-DE', {
+                            style: 'currency',
+                            currency: 'EUR',
+                          })}`,
+                        )
+                      }
+                      if (klasse.extraDeductionPercent) {
+                        details.push(`Extra-Abzug ${klasse.extraDeductionPercent.toLocaleString('de-DE')} %`)
+                      }
+
+                      return (
+                        <SelectItem key={klasse.value} value={klasse.value}>
+                          <div className="flex flex-col">
+                            <span>{klasse.label}</span>
+                            <span className="text-xs text-gray-500">{details.join(' • ')}</span>
+                          </div>
+                        </SelectItem>
+                      )
+                    })}
                   </SelectContent>
                 </Select>
               </div>
