@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
   webpack: (config, { dev }) => {
     if (dev) {
       config.watchOptions = {
-        ignored: ["**/*"], // webpack hot reload kapalı
+        ignored: ["**/node_modules", "**/.git"],
       };
     }
     return config;
