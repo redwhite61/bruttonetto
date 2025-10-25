@@ -366,9 +366,18 @@ export default function BruttoNettoRechner() {
                     <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
                       <div className="flex items-center gap-2 text-gray-600 mb-2">
                         <Calendar className="h-4 w-4" />
-                        <span className="text-sm">Jährlich (Netto)</span>
+                        <span className="text-sm">Jährlich</span>
                       </div>
-                      <div className="text-gray-900">{result.yearly.netSalary.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
+                      <div className="flex flex-col gap-1 text-gray-900">
+                        <div>
+                          <span className="text-xs uppercase tracking-wide text-gray-500">Netto</span>
+                          <div>{result.yearly.netSalary.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
+                        </div>
+                        <div>
+                          <span className="text-xs uppercase tracking-wide text-gray-500">Brutto</span>
+                          <div>{result.yearly.grossSalary.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
+                        </div>
+                      </div>
                     </div>
                     <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
                       <div className="flex items-center gap-2 text-gray-600 mb-2">
