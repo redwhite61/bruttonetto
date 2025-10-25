@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Calculator, Euro, Info, TrendingUp, Clock, Calendar } from 'lucide-react'
+import { AppConfig, defaultAppConfig } from '@/lib/default-config'
 
 interface CalculationResult {
   grossSalary: number
@@ -45,35 +46,11 @@ interface CalculationResult {
   }
 }
 
-const BUNDESLAENDER = [
-  { value: 'baden-wuerttemberg', label: 'Baden-Württemberg', churchTaxRate: 8 },
-  { value: 'bayern', label: 'Bayern', churchTaxRate: 8 },
-  { value: 'berlin', label: 'Berlin', churchTaxRate: 9 },
-  { value: 'brandenburg', label: 'Brandenburg', churchTaxRate: 9 },
-  { value: 'bremen', label: 'Bremen', churchTaxRate: 9 },
-  { value: 'hamburg', label: 'Hamburg', churchTaxRate: 9 },
-  { value: 'hessen', label: 'Hessen', churchTaxRate: 9 },
-  { value: 'mecklenburg-vorpommern', label: 'Mecklenburg-Vorpommern', churchTaxRate: 9 },
-  { value: 'niedersachsen', label: 'Niedersachsen', churchTaxRate: 9 },
-  { value: 'nordrhein-westfalen', label: 'Nordrhein-Westfalen', churchTaxRate: 9 },
-  { value: 'rheinland-pfalz', label: 'Rheinland-Pfalz', churchTaxRate: 9 },
-  { value: 'saarland', label: 'Saarland', churchTaxRate: 9 },
-  { value: 'sachsen', label: 'Sachsen', churchTaxRate: 9 },
-  { value: 'sachsen-anhalt', label: 'Sachsen-Anhalt', churchTaxRate: 9 },
-  { value: 'schleswig-holstein', label: 'Schleswig-Holstein', churchTaxRate: 9 },
-  { value: 'thueringen', label: 'Thüringen', churchTaxRate: 9 }
-]
-
-const STEUERKLASSEN = [
-  { value: '1', label: 'Steuerklasse 1 - Ledig/verwitwet' },
-  { value: '2', label: 'Steuerklasse 2 - Alleinerziehend' },
-  { value: '3', label: 'Steuerklasse 3 - Verheiratet (höheres Einkommen)' },
-  { value: '4', label: 'Steuerklasse 4 - Verheiratet (gleiches Einkommen)' },
-  { value: '5', label: 'Steuerklasse 5 - Verheiratet (niedrigeres Einkommen)' },
-  { value: '6', label: 'Steuerklasse 6 - Zweitjob' }
-]
-
 export default function BruttoNettoRechner() {
+  const [appConfig, setAppConfig] = useState<AppConfig>(defaultAppConfig)
+  const [configError, setConfigError] = useState<string | null>(null)
+  const [configLoading, setConfigLoading] = useState(true)
+
   const [formData, setFormData] = useState({
     bruttoGehalt: '',
     bundesland: '',
@@ -89,6 +66,38 @@ export default function BruttoNettoRechner() {
 
   const [result, setResult] = useState<CalculationResult | null>(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        setConfigLoading(true)
+        const response = await fetch('/api/config')
+        if (!response.ok) {
+          throw new Error('Konfiguration konnte nicht geladen werden')
+        }
+        const data = await response.json()
+        if (data?.config) {
+          setAppConfig(data.config as AppConfig)
+          setConfigError(null)
+        }
+      } catch (error) {
+        console.error('Konfigurations-Load-Fehler', error)
+        setConfigError('Konfiguration konnte nicht geladen werden. Varsayılan değerler kullanılıyor.')
+      } finally {
+        setConfigLoading(false)
+      }
+    }
+
+    loadConfig()
+  }, [])
+
+  const formatRate = (value: number) =>
+    `${value.toLocaleString('de-DE', {
+      minimumFractionDigits: value % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: 3,
+    })} %`
+
+  const socialInsurance = appConfig.socialInsurance
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -136,6 +145,9 @@ export default function BruttoNettoRechner() {
           </div>
           <p className="text-gray-600 max-w-2xl mx-auto">🇩🇪 Almanya 2025 – Güncel Brutto-Netto Hesaplama</p>
           <p className="text-gray-500 mt-1">Präzise Gehaltsberechnung mit aktuellen Steuersätzen</p>
+          {configError && (
+            <p className="mt-3 text-sm text-red-500">{configError}</p>
+          )}
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
@@ -169,11 +181,14 @@ export default function BruttoNettoRechner() {
               <div className="space-y-2">
                 <Label htmlFor="bundesland" className="text-gray-700">Bundesland</Label>
                 <Select value={formData.bundesland} onValueChange={(value) => handleInputChange('bundesland', value)}>
-                  <SelectTrigger className="border-gray-300 focus:border-[#0071C5] focus:ring-[#0071C5]">
-                    <SelectValue placeholder="Bundesland wählen" />
+                  <SelectTrigger
+                    className="border-gray-300 focus:border-[#0071C5] focus:ring-[#0071C5]"
+                    disabled={configLoading || appConfig.states.length === 0}
+                  >
+                    <SelectValue placeholder={configLoading ? 'Laden...' : 'Bundesland wählen'} />
                   </SelectTrigger>
                   <SelectContent>
-                    {BUNDESLAENDER.map((state) => (
+                    {appConfig.states.map((state) => (
                       <SelectItem key={state.value} value={state.value}>
                         {state.label}
                       </SelectItem>
@@ -189,9 +204,12 @@ export default function BruttoNettoRechner() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {STEUERKLASSEN.map((klasse) => (
+                    {appConfig.taxClasses.map((klasse) => (
                       <SelectItem key={klasse.value} value={klasse.value}>
-                        {klasse.label}
+                        <div className="flex flex-col">
+                          <span>{klasse.label}</span>
+                          <span className="text-xs text-gray-500">{klasse.description}</span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -245,7 +263,9 @@ export default function BruttoNettoRechner() {
                       onCheckedChange={(checked) => handleInputChange('krankenversicherung', checked)}
                       className="border-gray-400"
                     />
-                    <Label htmlFor="krankenversicherung" className="text-gray-700 cursor-pointer">Krankenversicherung (8,55%)</Label>
+                    <Label htmlFor="krankenversicherung" className="text-gray-700 cursor-pointer">
+                      {`${socialInsurance.health.label} (${formatRate(socialInsurance.health.employeeRate)})`}
+                    </Label>
                   </div>
 
                   <div className="flex items-center space-x-3">
@@ -255,7 +275,9 @@ export default function BruttoNettoRechner() {
                       onCheckedChange={(checked) => handleInputChange('rentenversicherung', checked)}
                       className="border-gray-400"
                     />
-                    <Label htmlFor="rentenversicherung" className="text-gray-700 cursor-pointer">Rentenversicherung</Label>
+                    <Label htmlFor="rentenversicherung" className="text-gray-700 cursor-pointer">
+                      {`${socialInsurance.pension.label} (${formatRate(socialInsurance.pension.employeeRate)})`}
+                    </Label>
                   </div>
 
                   <div className="flex items-center space-x-3">
@@ -265,7 +287,9 @@ export default function BruttoNettoRechner() {
                       onCheckedChange={(checked) => handleInputChange('arbeitslosenversicherung', checked)}
                       className="border-gray-400"
                     />
-                    <Label htmlFor="arbeitslosenversicherung" className="text-gray-700 cursor-pointer">Arbeitslosenversicherung</Label>
+                    <Label htmlFor="arbeitslosenversicherung" className="text-gray-700 cursor-pointer">
+                      {`${socialInsurance.unemployment.label} (${formatRate(socialInsurance.unemployment.employeeRate)})`}
+                    </Label>
                   </div>
 
                   <div className="flex items-center space-x-3">
@@ -275,7 +299,9 @@ export default function BruttoNettoRechner() {
                       onCheckedChange={(checked) => handleInputChange('pflegeversicherung', checked)}
                       className="border-gray-400"
                     />
-                    <Label htmlFor="pflegeversicherung" className="text-gray-700 cursor-pointer">Pflegeversicherung (1,875%)</Label>
+                    <Label htmlFor="pflegeversicherung" className="text-gray-700 cursor-pointer">
+                      {`${socialInsurance.care.label} (${formatRate(socialInsurance.care.employeeRate)})`}
+                    </Label>
                   </div>
                 </div>
               </div>
@@ -442,52 +468,19 @@ export default function BruttoNettoRechner() {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="grid md:grid-cols-2 gap-8 text-sm">
-              <div className="bg-white p-5 rounded-lg border border-gray-200">
-                <h4 className="text-gray-900 mb-3 pb-2 border-b border-gray-200">Vergünstigungen (Steuerklassen)</h4>
-                <ul className="space-y-2 text-gray-700">
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-500 mt-1">•</span>
-                    <span>Klasse 1: Grundfreibetrag €11.604/Jahr</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-500 mt-1">•</span>
-                    <span>Klasse 2: Zusätzliche Entlastung €1.308/Jahr</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-500 mt-1">•</span>
-                    <span>Klasse 3: Doppelter Grundfreibetrag für Verheiratete</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-500 mt-1">•</span>
-                    <span>Klasse 4: Einzelveranlagung für Verheiratete</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="bg-white p-5 rounded-lg border border-gray-200">
-                <h4 className="text-gray-900 mb-3 pb-2 border-b border-gray-200">Sozialversicherungsraten 2025</h4>
-                <ul className="space-y-2 text-gray-700">
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-500 mt-1">•</span>
-                    <span>Rentenversicherung: 18,6% (9,3% Arbeitnehmer)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-500 mt-1">•</span>
-                    <span>Krankenversicherung: 8,55% Arbeitnehmeranteil</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-500 mt-1">•</span>
-                    <span>Pflegeversicherung: 1,875% (kinderlos)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-500 mt-1">•</span>
-                    <span>Arbeitslosenversicherung: 2,6% (1,3% Arbeitnehmer)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-500 mt-1">•</span>
-                    <span>Solidaritätszuschlag: 0% (aufgehoben)</span>
-                  </li>
-                </ul>
-              </div>
+              {appConfig.infoSections.map((section) => (
+                <div key={section.id} className="bg-white p-5 rounded-lg border border-gray-200">
+                  <h4 className="text-gray-900 mb-3 pb-2 border-b border-gray-200">{section.title}</h4>
+                  <ul className="space-y-2 text-gray-700">
+                    {section.items.map((item, index) => (
+                      <li key={`${section.id}-${index}`} className="flex items-start gap-2">
+                        <span className="text-gray-500 mt-1">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

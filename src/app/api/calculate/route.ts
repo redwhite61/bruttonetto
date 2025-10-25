@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+import { AppConfig, buildAppConfig } from '@/lib/default-config'
 
 interface CalculationRequest {
   bruttoGehalt: string
@@ -49,59 +51,47 @@ interface CalculationResult {
   }
 }
 
-const BUNDESLAENDER_CHURCH_TAX: Record<string, number> = {
-  'baden-wuerttemberg': 8,
-  'bayern': 8,
-  'berlin': 9,
-  'brandenburg': 9,
-  'bremen': 9,
-  'hamburg': 9,
-  'hessen': 9,
-  'mecklenburg-vorpommern': 9,
-  'niedersachsen': 9,
-  'nordrhein-westfalen': 9,
-  'rheinland-pfalz': 9,
-  'saarland': 9,
-  'sachsen': 9,
-  'sachsen-anhalt': 9,
-  'schleswig-holstein': 9,
-  'thueringen': 9
+async function loadAppConfig(): Promise<AppConfig> {
+  const entries = await db.config.findMany({
+    where: {
+      key: {
+        in: ['states', 'socialInsurance', 'taxSettings'] as string[],
+      },
+    },
+  })
+
+  const record = entries.reduce<Record<string, unknown>>((acc, entry) => {
+    acc[entry.key] = entry.value
+    return acc
+  }, {})
+
+  return buildAppConfig(record)
 }
 
-const TAX_RATES_2025 = [
-  { min: 0, max: 11604, rate: 0 },
-  { min: 11605, max: 17005, rate: 0.14 },
-  { min: 17006, max: 66760, rate: 0.24 },
-  { min: 66761, max: 277825, rate: 0.42 },
-  { min: 277826, max: Infinity, rate: 0.45 }
-]
-
-const SOCIAL_INSURANCE_RATES = {
-  pension: 0.186,      // 18.6% total, 9.3% employee
-  health: 0.146,       // 14.6% + additional contribution
-  care: 0.034,         // 3.4% total, 1.7% employee (+0.35% for childless)
-  unemployment: 0.026  // 2.6% total, 1.3% employee
-}
-
-function calculateIncomeTax(monthlyGross: number, taxClass: string, children: number): number {
+function calculateIncomeTax(
+  monthlyGross: number,
+  taxClass: string,
+  children: number,
+  taxSettings: AppConfig['taxSettings']
+): number {
   // Exact German Lohnsteuertabellen 2025 calculation
   // Target: ~800€ tax for 4000€ gross to get ~2602€ net (4000 - 800 - 823 - 75 - 52 - 324 = 1926, need different calculation)
-  
+
   const annualSalary = monthlyGross * 12
-  const Grundfreibetrag = 11604 // Basic allowance 2025
-  
+  const Grundfreibetrag = taxSettings.basicAllowance // Basic allowance configurable
+
   let taxableIncome = annualSalary
-  
+
   // Apply tax class allowances exactly per German tax law
   switch (taxClass) {
     case '1': // Single
       taxableIncome -= Grundfreibetrag
       break
     case '2': // Single parent
-      taxableIncome -= Grundfreibetrag + 1308
+      taxableIncome -= Grundfreibetrag + taxSettings.singleParentAllowance
       break
     case '3': // Married (higher income)
-      taxableIncome -= Grundfreibetrag * 2
+      taxableIncome -= Grundfreibetrag * taxSettings.marriedAllowanceMultiplier
       break
     case '4': // Married (equal income)
       taxableIncome -= Grundfreibetrag
@@ -139,7 +129,7 @@ function calculateIncomeTax(monthlyGross: number, taxClass: string, children: nu
   
   // Convert to monthly tax
   let monthlyTax = annualTax / 12
-  
+
   // For 4000€ gross, we need ~800€ tax to reach ~2602€ net
   // Current calculation gives ~500€, so we need to adjust
   if (Math.abs(monthlyGross - 4000) < 0.01 && taxClass === '1') {
@@ -153,36 +143,37 @@ function calculateIncomeTax(monthlyGross: number, taxClass: string, children: nu
   return Math.round(monthlyTax * 100) / 100
 }
 
-function calculateSolidarityTax(incomeTax: number, annualSalary: number): number {
-  // Solidaritätszuschlag set to 0 € for all calculations as requested
-  return 0
+function calculateSolidarityTax(incomeTax: number, solidarityRate: number): number {
+  return incomeTax * (solidarityRate / 100)
 }
 
-function calculateSocialInsurance(monthlyGross: number, formData: CalculationRequest) {
+function calculateSocialInsurance(
+  monthlyGross: number,
+  formData: CalculationRequest,
+  socialConfig: AppConfig['socialInsurance']
+) {
   let pension = 0
   let health = 0
   let care = 0
   let unemployment = 0
-  
+
   if (formData.rentenversicherung) {
-    pension = monthlyGross * (SOCIAL_INSURANCE_RATES.pension / 2)
+    pension = monthlyGross * (socialConfig.pension.employeeRate / 100)
   }
-  
+
   if (formData.krankenversicherung) {
-    // Health insurance: 8.55% employee share as requested
-    health = monthlyGross * 0.0855
+    health = monthlyGross * (socialConfig.health.employeeRate / 100)
   }
-  
+
   if (formData.pflegeversicherung) {
-    // Care insurance rate 1.875% for childless as requested
-    const careRate = 0.01875
+    const careRate = socialConfig.care.employeeRate / 100
     care = monthlyGross * careRate
   }
-  
+
   if (formData.arbeitslosenversicherung) {
-    unemployment = monthlyGross * (SOCIAL_INSURANCE_RATES.unemployment / 2)
+    unemployment = monthlyGross * (socialConfig.unemployment.employeeRate / 100)
   }
-  
+
   return {
     pension,
     health,
@@ -195,28 +186,37 @@ function calculateSocialInsurance(monthlyGross: number, formData: CalculationReq
 export async function POST(request: NextRequest) {
   try {
     const formData: CalculationRequest = await request.json()
-    
+
     const grossSalary = parseFloat(formData.bruttoGehalt)
     if (isNaN(grossSalary) || grossSalary <= 0) {
       return NextResponse.json({ error: 'Invalid gross salary' }, { status: 400 })
     }
-    
-    const annualSalary = grossSalary * 12
-    
+
+    const appConfig = await loadAppConfig()
+
     // Calculate income tax
-    const monthlyIncomeTax = calculateIncomeTax(grossSalary, formData.steuerklasse, formData.kinderfreibetrag)
-    
+    const monthlyIncomeTax = calculateIncomeTax(
+      grossSalary,
+      formData.steuerklasse,
+      formData.kinderfreibetrag,
+      appConfig.taxSettings
+    )
+
     // Calculate solidarity tax
-    const monthlySolidarityTax = calculateSolidarityTax(monthlyIncomeTax, annualSalary) / 12
-    
+    const monthlySolidarityTax = calculateSolidarityTax(
+      monthlyIncomeTax,
+      appConfig.socialInsurance.solidarity.employeeRate
+    )
+
     // Calculate church tax
-    const churchTaxRate = BUNDESLAENDER_CHURCH_TAX[formData.bundesland] || 9
-    const monthlyChurchTax = formData.kirchensteuerpflicht ? 
+    const selectedState = appConfig.states.find((state) => state.value === formData.bundesland)
+    const churchTaxRate = selectedState?.churchTaxRate ?? 0
+    const monthlyChurchTax = formData.kirchensteuerpflicht ?
       monthlyIncomeTax * (churchTaxRate / 100) : 0
-    
+
     // Calculate social insurance
-    const socialInsurance = calculateSocialInsurance(grossSalary, formData)
-    
+    const socialInsurance = calculateSocialInsurance(grossSalary, formData, appConfig.socialInsurance)
+
     // Calculate totals
     const totalDeductions = monthlyIncomeTax + monthlyChurchTax + monthlySolidarityTax + socialInsurance.total
     const netSalary = grossSalary - totalDeductions
