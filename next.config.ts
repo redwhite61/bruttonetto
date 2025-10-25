@@ -1,24 +1,30 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // ✅ Allowed origins for dev mode (uyarıyı kaldırır)
+  allowedDevOrigins: ["http://168.231.101.122:3002"],
+
+  // ✅ TypeScript hatalarını build sırasında yoksay
   typescript: {
     ignoreBuildErrors: true,
   },
-  // 禁用 Next.js 热重载，由 nodemon 处理重编译
+
+  // ✅ ESLint hatalarını build sırasında yoksay
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
+  // ✅ React Strict Mode kapalı (geliştirmede performans)
   reactStrictMode: false,
+
+  // ✅ nodemon ile derleme kontrolü
   webpack: (config, { dev }) => {
     if (dev) {
-      // 禁用 webpack 的热模块替换
       config.watchOptions = {
-        ignored: ['**/*'], // 忽略所有文件变化
+        ignored: ["**/*"], // webpack hot reload kapalı
       };
     }
     return config;
-  },
-  eslint: {
-    // 构建时忽略ESLint错误
-    ignoreDuringBuilds: true,
   },
 };
 
