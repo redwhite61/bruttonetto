@@ -4,9 +4,10 @@ const nextConfig: NextConfig = {
   // ✅ Allowed origins for dev mode (uyarıyı kaldırır)
   allowedDevOrigins:
     process.env.DEV_SERVER_ORIGINS?.split(',').map((origin) => origin.trim()).filter(Boolean) ?? [
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
-      "http://0.0.0.0:3000",
+      "http://168.231.101.122:3002",
+      "http://localhost:3002",
+      "http://127.0.0.1:3002",
+      "http://0.0.0.0:3002",
     ],
 
   // ✅ TypeScript hatalarını build sırasında yoksay
