@@ -11,10 +11,8 @@ function normalizeEntries(entries: { key: string; value: unknown }[]) {
   return record
 }
 
-export async function GET(_request: NextRequest) {
-  if (!isAdminRequestAuthorized(_request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+export async function GET(request: NextRequest) {
+  const authorized = isAdminRequestAuthorized(request)
   try {
     const entries = await db.config.findMany({
       where: {
@@ -30,10 +28,20 @@ export async function GET(_request: NextRequest) {
     const entryMap = normalizeEntries(entries)
     const config: AppConfig = buildAppConfig(entryMap)
 
-    return NextResponse.json({
+    const responseBody: {
+      config: AppConfig
+      entries?: ReturnType<typeof extractConfigEntries>
+      authorized: boolean
+    } = {
       config,
-      entries: extractConfigEntries(entryMap),
-    })
+      authorized,
+    }
+
+    if (authorized) {
+      responseBody.entries = extractConfigEntries(entryMap)
+    }
+
+    return NextResponse.json(responseBody)
   } catch (error) {
     console.error('Config GET error', error)
     return NextResponse.json({ error: 'Unable to load configuration' }, { status: 500 })

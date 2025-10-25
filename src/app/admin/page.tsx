@@ -20,7 +20,8 @@ import { Loader2, Plus, Save, Trash2 } from 'lucide-react'
 
 interface ConfigPayload {
   config: AppConfig
-  entries: Partial<AppConfig>
+  entries?: Partial<AppConfig>
+  authorized?: boolean
 }
 
 const CONFIG_DESCRIPTIONS: Record<ConfigKey, string> = {
@@ -80,18 +81,17 @@ export default function AdminConfigPage() {
       setLoading(true)
       const response = await fetch('/api/config')
 
-      if (response.status === 401) {
-        setAuthState('unauthenticated')
-        return
-      }
-
-      setAuthState('authenticated')
-
       if (!response.ok) {
         throw new Error('Konfiguration konnte nicht geladen werden')
       }
 
       const data: ConfigPayload = await response.json()
+      if (data.authorized === false) {
+        setAuthState('unauthenticated')
+        return
+      }
+
+      setAuthState('authenticated')
       const incoming = data.config ?? defaultAppConfig
 
       setConfig({
