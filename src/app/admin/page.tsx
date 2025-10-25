@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -348,311 +349,241 @@ export default function AdminConfigPage() {
             <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Konfiguration wird geladen ...
           </div>
         ) : (
-          <div className="grid gap-6">
-            <Card className="shadow-sm border border-slate-200">
-              <CardHeader className="bg-white rounded-t-lg">
-                <CardTitle className="text-lg font-semibold text-slate-900">{TITLE_MAP.states}</CardTitle>
-                <CardDescription className="text-xs text-slate-500">
-                  {CONFIG_DESCRIPTIONS.states}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-5 pt-4">
-                <div className="space-y-4">
-                  {config.states.map((state, index) => (
-                    <div
-                      key={`${state.value}-${index}`}
-                      className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
-                    >
-                      <div className="grid gap-4 md:grid-cols-3">
-                        <div className="space-y-2">
-                          <Label htmlFor={`state-label-${index}`}>Angezeigter Name</Label>
-                          <Input
-                            id={`state-label-${index}`}
-                            value={state.label}
-                            onChange={(event) => updateStateEntry(index, 'label', event.target.value)}
-                            placeholder="z. B. Bayern"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`state-value-${index}`}>Systemschlüssel</Label>
-                          <Input
-                            id={`state-value-${index}`}
-                            value={state.value}
-                            onChange={(event) => updateStateEntry(index, 'value', event.target.value)}
-                            placeholder="z. B. bayern"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`state-rate-${index}`}>Kirchensteuer (%)</Label>
-                          <Input
-                            id={`state-rate-${index}`}
-                            type="number"
-                            inputMode="decimal"
-                            min={0}
-                            step="0.1"
-                            value={state.churchTaxRate}
-                            onChange={(event) => updateStateEntry(index, 'churchTaxRate', event.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <div className="mt-3 flex justify-end">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="text-red-600 hover:text-red-700"
-                          onClick={() => removeStateEntry(index)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Löschen
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+          <Accordion type="multiple" className="space-y-4">
+            <AccordionItem
+              value="states"
+              className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+            >
+              <AccordionTrigger className="bg-white px-5 py-4 text-base font-semibold text-slate-900">
+                <div className="text-left">
+                  <div>{TITLE_MAP.states}</div>
+                  <p className="text-xs font-normal text-slate-500">{CONFIG_DESCRIPTIONS.states}</p>
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>{renderStatus('states')}</div>
-                  <div className="flex items-center gap-2">
-                    <Button type="button" variant="outline" onClick={addStateEntry}>
-                      <Plus className="mr-2 h-4 w-4" /> Bundesland hinzufügen
-                    </Button>
-                    <Button
-                      onClick={() => handleSave('states')}
-                      disabled={savingKey === 'states'}
-                      className="bg-[#0071C5] hover:bg-[#005a9e]"
-                    >
-                      {savingKey === 'states' ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Wird gespeichert ...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="mr-2 h-4 w-4" /> Speichern
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-sm border border-slate-200">
-              <CardHeader className="bg-white rounded-t-lg">
-                <CardTitle className="text-lg font-semibold text-slate-900">{TITLE_MAP.taxClasses}</CardTitle>
-                <CardDescription className="text-xs text-slate-500">
-                  {CONFIG_DESCRIPTIONS.taxClasses}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-5 pt-4">
-                <div className="space-y-4">
-                  {config.taxClasses.map((taxClass, index) => (
-                    <div
-                      key={`${taxClass.value}-${index}`}
-                      className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
-                    >
-                      <div className="grid gap-4 md:grid-cols-3">
-                        <div className="space-y-2">
-                          <Label htmlFor={`taxclass-label-${index}`}>Angezeigter Name</Label>
-                          <Input
-                            id={`taxclass-label-${index}`}
-                            value={taxClass.label}
-                            onChange={(event) => updateTaxClassEntry(index, 'label', event.target.value)}
-                            placeholder="z. B. Steuerklasse 1"
-                          />
+              </AccordionTrigger>
+              <AccordionContent className="px-5 pb-6">
+                <div className="space-y-5 pt-4">
+                  <div className="space-y-4">
+                    {config.states.map((state, index) => (
+                      <div
+                        key={`${state.value}-${index}`}
+                        className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+                      >
+                        <div className="grid gap-4 md:grid-cols-3">
+                          <div className="space-y-2">
+                            <Label htmlFor={`state-label-${index}`}>Angezeigter Name</Label>
+                            <Input
+                              id={`state-label-${index}`}
+                              value={state.label}
+                              onChange={(event) => updateStateEntry(index, 'label', event.target.value)}
+                              placeholder="z. B. Bayern"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`state-value-${index}`}>Systemschlüssel</Label>
+                            <Input
+                              id={`state-value-${index}`}
+                              value={state.value}
+                              onChange={(event) => updateStateEntry(index, 'value', event.target.value)}
+                              placeholder="z. B. bayern"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`state-rate-${index}`}>Kirchensteuer (%)</Label>
+                            <Input
+                              id={`state-rate-${index}`}
+                              type="number"
+                              inputMode="decimal"
+                              min={0}
+                              step="0.1"
+                              value={state.churchTaxRate}
+                              onChange={(event) => updateStateEntry(index, 'churchTaxRate', event.target.value)}
+                            />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`taxclass-value-${index}`}>Systemschlüssel</Label>
-                          <Input
-                            id={`taxclass-value-${index}`}
-                            value={taxClass.value}
-                            onChange={(event) => updateTaxClassEntry(index, 'value', event.target.value)}
-                            placeholder="z. B. 1"
-                          />
-                        </div>
-                        <div className="space-y-2 md:col-span-3">
-                          <Label htmlFor={`taxclass-description-${index}`}>Beschreibung</Label>
-                          <Textarea
-                            id={`taxclass-description-${index}`}
-                            value={taxClass.description}
-                            onChange={(event) => updateTaxClassEntry(index, 'description', event.target.value)}
-                            rows={3}
-                          />
-                        </div>
-                      </div>
-                      <div className="mt-3 flex justify-end">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="text-red-600 hover:text-red-700"
-                          onClick={() => removeTaxClassEntry(index)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Löschen
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>{renderStatus('taxClasses')}</div>
-                  <div className="flex items-center gap-2">
-                    <Button type="button" variant="outline" onClick={addTaxClassEntry}>
-                      <Plus className="mr-2 h-4 w-4" /> Steuerklasse hinzufügen
-                    </Button>
-                    <Button
-                      onClick={() => handleSave('taxClasses')}
-                      disabled={savingKey === 'taxClasses'}
-                      className="bg-[#0071C5] hover:bg-[#005a9e]"
-                    >
-                      {savingKey === 'taxClasses' ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Wird gespeichert ...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="mr-2 h-4 w-4" /> Speichern
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-sm border border-slate-200">
-              <CardHeader className="bg-white rounded-t-lg">
-                <CardTitle className="text-lg font-semibold text-slate-900">{TITLE_MAP.socialInsurance}</CardTitle>
-                <CardDescription className="text-xs text-slate-500">
-                  {CONFIG_DESCRIPTIONS.socialInsurance}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-5 pt-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  {(Object.keys(config.socialInsurance) as (keyof AppConfig['socialInsurance'])[]).map((key) => {
-                    const entry = config.socialInsurance[key]
-                    return (
-                      <div key={key} className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                        <div className="space-y-2">
-                          <Label htmlFor={`social-label-${key}`}>Bezeichnung</Label>
-                          <Input
-                            id={`social-label-${key}`}
-                            value={entry.label}
-                            onChange={(event) => handleSocialInsuranceChange(key, 'label', event.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`social-rate-${key}`}>Arbeitnehmeranteil (%)</Label>
-                          <Input
-                            id={`social-rate-${key}`}
-                            type="number"
-                            inputMode="decimal"
-                            min={0}
-                            step="0.1"
-                            value={entry.employeeRate}
-                            onChange={(event) => handleSocialInsuranceChange(key, 'employeeRate', event.target.value)}
-                          />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>{renderStatus('socialInsurance')}</div>
-                  <Button
-                    onClick={() => handleSave('socialInsurance')}
-                    disabled={savingKey === 'socialInsurance'}
-                    className="bg-[#0071C5] hover:bg-[#005a9e]"
-                  >
-                    {savingKey === 'socialInsurance' ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Wird gespeichert ...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" /> Speichern
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-sm border border-slate-200">
-              <CardHeader className="bg-white rounded-t-lg">
-                <CardTitle className="text-lg font-semibold text-slate-900">{TITLE_MAP.infoSections}</CardTitle>
-                <CardDescription className="text-xs text-slate-500">
-                  {CONFIG_DESCRIPTIONS.infoSections}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-5 pt-4">
-                <div className="space-y-4">
-                  {config.infoSections.map((section, sectionIndex) => (
-                    <div key={`${section.id}-${sectionIndex}`} className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor={`info-title-${sectionIndex}`}>Titel</Label>
-                          <Input
-                            id={`info-title-${sectionIndex}`}
-                            value={section.title}
-                            onChange={(event) => updateInfoSection(sectionIndex, { title: event.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`info-id-${sectionIndex}`}>ID</Label>
-                          <Input
-                            id={`info-id-${sectionIndex}`}
-                            value={section.id}
-                            onChange={(event) => updateInfoSection(sectionIndex, { id: event.target.value })}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <Label>Listenpunkte</Label>
-                        <div className="space-y-3">
-                          {section.items.map((item, itemIndex) => (
-                            <div key={`${sectionIndex}-${itemIndex}`} className="flex items-start gap-2">
-                              <Input
-                                value={item}
-                                onChange={(event) => updateInfoSectionItem(sectionIndex, itemIndex, event.target.value)}
-                                placeholder="Listenpunkt"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                className="text-red-600 hover:text-red-700"
-                                onClick={() => removeInfoSectionItem(sectionIndex, itemIndex)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                          <Button type="button" variant="outline" onClick={() => addInfoSectionItem(sectionIndex)}>
-                            <Plus className="mr-2 h-4 w-4" /> Eintrag hinzufügen
+                        <div className="mt-3 flex justify-end">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => removeStateEntry(index)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Löschen
                           </Button>
                         </div>
                       </div>
-                      <div className="flex justify-end">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="text-red-600 hover:text-red-700"
-                          onClick={() => removeInfoSection(sectionIndex)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Karte löschen
-                        </Button>
-                      </div>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>{renderStatus('states')}</div>
+                    <div className="flex items-center gap-2">
+                      <Button type="button" variant="outline" onClick={addStateEntry}>
+                        <Plus className="mr-2 h-4 w-4" /> Bundesland hinzufügen
+                      </Button>
+                      <Button
+                        onClick={() => handleSave('states')}
+                        disabled={savingKey === 'states'}
+                        className="bg-[#0071C5] hover:bg-[#005a9e]"
+                      >
+                        {savingKey === 'states' ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Wird gespeichert ...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="mr-2 h-4 w-4" /> Speichern
+                          </>
+                        )}
+                      </Button>
                     </div>
-                  ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>{renderStatus('infoSections')}</div>
-                  <div className="flex items-center gap-2">
-                    <Button type="button" variant="outline" onClick={addInfoSection}>
-                      <Plus className="mr-2 h-4 w-4" /> Infokarte hinzufügen
-                    </Button>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem
+              value="taxClasses"
+              className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+            >
+              <AccordionTrigger className="bg-white px-5 py-4 text-base font-semibold text-slate-900">
+                <div className="text-left">
+                  <div>{TITLE_MAP.taxClasses}</div>
+                  <p className="text-xs font-normal text-slate-500">{CONFIG_DESCRIPTIONS.taxClasses}</p>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-5 pb-6">
+                <div className="space-y-5 pt-4">
+                  <div className="space-y-4">
+                    {config.taxClasses.map((taxClass, index) => (
+                      <div
+                        key={`${taxClass.value}-${index}`}
+                        className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+                      >
+                        <div className="grid gap-4 md:grid-cols-3">
+                          <div className="space-y-2">
+                            <Label htmlFor={`taxclass-label-${index}`}>Angezeigter Name</Label>
+                            <Input
+                              id={`taxclass-label-${index}`}
+                              value={taxClass.label}
+                              onChange={(event) => updateTaxClassEntry(index, 'label', event.target.value)}
+                              placeholder="z. B. Steuerklasse 1"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`taxclass-value-${index}`}>Systemschlüssel</Label>
+                            <Input
+                              id={`taxclass-value-${index}`}
+                              value={taxClass.value}
+                              onChange={(event) => updateTaxClassEntry(index, 'value', event.target.value)}
+                              placeholder="z. B. 1"
+                            />
+                          </div>
+                          <div className="space-y-2 md:col-span-3">
+                            <Label htmlFor={`taxclass-description-${index}`}>Beschreibung</Label>
+                            <Textarea
+                              id={`taxclass-description-${index}`}
+                              value={taxClass.description}
+                              onChange={(event) => updateTaxClassEntry(index, 'description', event.target.value)}
+                              rows={3}
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-3 flex justify-end">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => removeTaxClassEntry(index)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Löschen
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>{renderStatus('taxClasses')}</div>
+                    <div className="flex items-center gap-2">
+                      <Button type="button" variant="outline" onClick={addTaxClassEntry}>
+                        <Plus className="mr-2 h-4 w-4" /> Steuerklasse hinzufügen
+                      </Button>
+                      <Button
+                        onClick={() => handleSave('taxClasses')}
+                        disabled={savingKey === 'taxClasses'}
+                        className="bg-[#0071C5] hover:bg-[#005a9e]"
+                      >
+                        {savingKey === 'taxClasses' ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Wird gespeichert ...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="mr-2 h-4 w-4" /> Speichern
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem
+              value="socialInsurance"
+              className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+            >
+              <AccordionTrigger className="bg-white px-5 py-4 text-base font-semibold text-slate-900">
+                <div className="text-left">
+                  <div>{TITLE_MAP.socialInsurance}</div>
+                  <p className="text-xs font-normal text-slate-500">{CONFIG_DESCRIPTIONS.socialInsurance}</p>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-5 pb-6">
+                <div className="space-y-5 pt-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {Object.entries(config.socialInsurance).map(([key, insurance]) => (
+                      <div key={key} className="space-y-2 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                        <div className="space-y-2">
+                          <Label htmlFor={`insurance-label-${key}`}>Bezeichnung</Label>
+                          <Input
+                            id={`insurance-label-${key}`}
+                            value={insurance.label}
+                            onChange={(event) =>
+                              handleSocialInsuranceChange(
+                                key as keyof AppConfig['socialInsurance'],
+                                'label',
+                                event.target.value,
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`insurance-rate-${key}`}>Arbeitnehmeranteil (%)</Label>
+                          <Input
+                            id={`insurance-rate-${key}`}
+                            type="number"
+                            inputMode="decimal"
+                            step="0.1"
+                            value={insurance.employeeRate}
+                            onChange={(event) =>
+                              handleSocialInsuranceChange(
+                                key as keyof AppConfig['socialInsurance'],
+                                'employeeRate',
+                                event.target.value,
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>{renderStatus('socialInsurance')}</div>
                     <Button
-                      onClick={() => handleSave('infoSections')}
-                      disabled={savingKey === 'infoSections'}
+                      onClick={() => handleSave('socialInsurance')}
+                      disabled={savingKey === 'socialInsurance'}
                       className="bg-[#0071C5] hover:bg-[#005a9e]"
                     >
-                      {savingKey === 'infoSections' ? (
+                      {savingKey === 'socialInsurance' ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Wird gespeichert ...
                         </>
@@ -664,72 +595,178 @@ export default function AdminConfigPage() {
                     </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </AccordionContent>
+            </AccordionItem>
 
-            <Card className="shadow-sm border border-slate-200">
-              <CardHeader className="bg-white rounded-t-lg">
-                <CardTitle className="text-lg font-semibold text-slate-900">{TITLE_MAP.taxSettings}</CardTitle>
-                <CardDescription className="text-xs text-slate-500">
-                  {CONFIG_DESCRIPTIONS.taxSettings}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-5 pt-4">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="tax-basic">Grundfreibetrag (€)</Label>
-                    <Input
-                      id="tax-basic"
-                      type="number"
-                      inputMode="decimal"
-                      value={config.taxSettings.basicAllowance}
-                      onChange={(event) => handleTaxSettingChange('basicAllowance', event.target.value)}
-                    />
+            <AccordionItem
+              value="infoSections"
+              className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+            >
+              <AccordionTrigger className="bg-white px-5 py-4 text-base font-semibold text-slate-900">
+                <div className="text-left">
+                  <div>{TITLE_MAP.infoSections}</div>
+                  <p className="text-xs font-normal text-slate-500">{CONFIG_DESCRIPTIONS.infoSections}</p>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-5 pb-6">
+                <div className="space-y-5 pt-4">
+                  <div className="space-y-5">
+                    {config.infoSections.map((section, sectionIndex) => (
+                      <div key={section.id} className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label htmlFor={`info-title-${section.id}`}>Titel</Label>
+                            <Input
+                              id={`info-title-${section.id}`}
+                              value={section.title}
+                              onChange={(event) => updateInfoSection(sectionIndex, { title: event.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`info-id-${section.id}`}>Technischer Schlüssel</Label>
+                            <Input
+                              id={`info-id-${section.id}`}
+                              value={section.id}
+                              onChange={(event) => updateInfoSection(sectionIndex, { id: event.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <Label>Listenpunkte</Label>
+                          <div className="space-y-2">
+                            {section.items.map((item, itemIndex) => (
+                              <div key={`${section.id}-item-${itemIndex}`} className="flex items-start gap-2">
+                                <Input
+                                  value={item}
+                                  onChange={(event) =>
+                                    updateInfoSectionItem(sectionIndex, itemIndex, event.target.value)
+                                  }
+                                  placeholder="Text des Listenpunkts"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  className="text-red-600 hover:text-red-700"
+                                  onClick={() => removeInfoSectionItem(sectionIndex, itemIndex)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                          <Button type="button" variant="outline" onClick={() => addInfoSectionItem(sectionIndex)}>
+                            <Plus className="mr-2 h-4 w-4" /> Listenpunkt hinzufügen
+                          </Button>
+                        </div>
+                        <div className="flex justify-end">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => removeInfoSection(sectionIndex)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Karte löschen
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="tax-single">Entlastungsbetrag Alleinerziehende (€)</Label>
-                    <Input
-                      id="tax-single"
-                      type="number"
-                      inputMode="decimal"
-                      value={config.taxSettings.singleParentAllowance}
-                      onChange={(event) => handleTaxSettingChange('singleParentAllowance', event.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="tax-married">Faktor Verheiratete</Label>
-                    <Input
-                      id="tax-married"
-                      type="number"
-                      inputMode="decimal"
-                      step="0.1"
-                      value={config.taxSettings.marriedAllowanceMultiplier}
-                      onChange={(event) => handleTaxSettingChange('marriedAllowanceMultiplier', event.target.value)}
-                    />
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>{renderStatus('infoSections')}</div>
+                    <div className="flex items-center gap-2">
+                      <Button type="button" variant="outline" onClick={addInfoSection}>
+                        <Plus className="mr-2 h-4 w-4" /> Infokarte hinzufügen
+                      </Button>
+                      <Button
+                        onClick={() => handleSave('infoSections')}
+                        disabled={savingKey === 'infoSections'}
+                        className="bg-[#0071C5] hover:bg-[#005a9e]"
+                      >
+                        {savingKey === 'infoSections' ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Wird gespeichert ...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="mr-2 h-4 w-4" /> Speichern
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>{renderStatus('taxSettings')}</div>
-                  <Button
-                    onClick={() => handleSave('taxSettings')}
-                    disabled={savingKey === 'taxSettings'}
-                    className="bg-[#0071C5] hover:bg-[#005a9e]"
-                  >
-                    {savingKey === 'taxSettings' ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Wird gespeichert ...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" /> Speichern
-                      </>
-                    )}
-                  </Button>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem
+              value="taxSettings"
+              className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+            >
+              <AccordionTrigger className="bg-white px-5 py-4 text-base font-semibold text-slate-900">
+                <div className="text-left">
+                  <div>{TITLE_MAP.taxSettings}</div>
+                  <p className="text-xs font-normal text-slate-500">{CONFIG_DESCRIPTIONS.taxSettings}</p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-5 pb-6">
+                <div className="space-y-5 pt-4">
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="tax-basic">Grundfreibetrag (€)</Label>
+                      <Input
+                        id="tax-basic"
+                        type="number"
+                        inputMode="decimal"
+                        value={config.taxSettings.basicAllowance}
+                        onChange={(event) => handleTaxSettingChange('basicAllowance', event.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="tax-single">Entlastungsbetrag Alleinerziehende (€)</Label>
+                      <Input
+                        id="tax-single"
+                        type="number"
+                        inputMode="decimal"
+                        value={config.taxSettings.singleParentAllowance}
+                        onChange={(event) => handleTaxSettingChange('singleParentAllowance', event.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="tax-married">Faktor Verheiratete</Label>
+                      <Input
+                        id="tax-married"
+                        type="number"
+                        inputMode="decimal"
+                        step="0.1"
+                        value={config.taxSettings.marriedAllowanceMultiplier}
+                        onChange={(event) => handleTaxSettingChange('marriedAllowanceMultiplier', event.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>{renderStatus('taxSettings')}</div>
+                    <Button
+                      onClick={() => handleSave('taxSettings')}
+                      disabled={savingKey === 'taxSettings'}
+                      className="bg-[#0071C5] hover:bg-[#005a9e]"
+                    >
+                      {savingKey === 'taxSettings' ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Wird gespeichert ...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="mr-2 h-4 w-4" /> Speichern
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         )}
+
 
         <Card className="border border-dashed border-slate-300 bg-white/70">
           <CardHeader>
