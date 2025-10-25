@@ -373,10 +373,19 @@ export default function BruttoNettoRechner() {
                     <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
                       <div className="flex items-center gap-2 text-gray-600 mb-2">
                         <Clock className="h-4 w-4" />
-                        <span className="text-sm">Stundenlohn (Netto)</span>
+                        <span className="text-sm">Stundenlohn</span>
                       </div>
-                      <div className="text-gray-900">{result.hourly.net.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="flex flex-col gap-1 text-gray-900">
+                        <div>
+                          <span className="text-xs uppercase tracking-wide text-gray-500">Netto</span>
+                          <div>{result.hourly.net.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
+                        </div>
+                        <div>
+                          <span className="text-xs uppercase tracking-wide text-gray-500">Brutto</span>
+                          <div>{result.hourly.gross.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2">
                         {result.hourly.weeklyHours}h/Woche
                       </div>
                     </div>
