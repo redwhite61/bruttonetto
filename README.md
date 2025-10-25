@@ -72,6 +72,18 @@ npm start
 
 Open [http://localhost:3000](http://localhost:3000) to see your application running.
 
+## 🔐 Admin-Zugang konfigurieren
+
+1. Erstelle eine `.env`-Datei basierend auf der Vorlage und setze deinen gewünschten PIN:
+
+   ```bash
+   cp .env.example .env
+   # Öffne .env und passe ADMIN_ACCESS_PIN an
+   ```
+
+2. Starte den Server neu, damit der PIN geladen wird.
+3. Rufe `/admin` auf und gib den PIN ein, um das Konfigurations-Panel freizuschalten.
+
 ## 🤖 Powered by Z.ai
 
 This scaffold is optimized for use with [Z.ai](https://chat.z.ai) - your AI assistant for:

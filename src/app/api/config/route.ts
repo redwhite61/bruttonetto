@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { AppConfig, CONFIG_KEYS, ConfigKey, buildAppConfig, extractConfigEntries } from '@/lib/default-config'
+import { isAdminRequestAuthorized } from '@/lib/admin-auth'
 
 function normalizeEntries(entries: { key: string; value: unknown }[]) {
   const record: Record<string, unknown> = {}
@@ -11,6 +12,9 @@ function normalizeEntries(entries: { key: string; value: unknown }[]) {
 }
 
 export async function GET(_request: NextRequest) {
+  if (!isAdminRequestAuthorized(_request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   try {
     const entries = await db.config.findMany({
       where: {
@@ -37,6 +41,9 @@ export async function GET(_request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  if (!isAdminRequestAuthorized(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   try {
     const payload = await request.json()
     const { key, value } = payload as { key?: string; value?: unknown }

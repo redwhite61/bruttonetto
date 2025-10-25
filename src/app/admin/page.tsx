@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { FormEvent, useCallback, useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
@@ -60,30 +60,56 @@ export default function AdminConfigPage() {
     infoSections: {},
     taxSettings: {},
   })
+  const [authState, setAuthState] = useState<'unknown' | 'authenticated' | 'unauthenticated'>('unknown')
+  const [loginPin, setLoginPin] = useState('')
+  const [loginError, setLoginError] = useState<string | null>(null)
+  const [loginLoading, setLoginLoading] = useState(false)
+
+  const resetSectionStatus = useCallback(() => {
+    setStatus({
+      states: {},
+      taxClasses: {},
+      socialInsurance: {},
+      infoSections: {},
+      taxSettings: {},
+    })
+  }, [])
+
+  const loadConfig = useCallback(async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/config')
+
+      if (response.status === 401) {
+        setAuthState('unauthenticated')
+        return
+      }
+
+      setAuthState('authenticated')
+
+      if (!response.ok) {
+        throw new Error('Konfiguration konnte nicht geladen werden')
+      }
+
+      const data: ConfigPayload = await response.json()
+      const incoming = data.config ?? defaultAppConfig
+
+      setConfig({
+        ...defaultAppConfig,
+        ...incoming,
+      })
+      setDirtyKeys([])
+      resetSectionStatus()
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }, [resetSectionStatus])
 
   useEffect(() => {
-    const loadConfig = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch('/api/config')
-        if (!response.ok) {
-          throw new Error('Konfiguration konnte nicht geladen werden')
-        }
-        const data: ConfigPayload = await response.json()
-        const incoming = data.config ?? defaultAppConfig
-        setConfig({
-          ...defaultAppConfig,
-          ...incoming,
-        })
-      } catch (error) {
-        console.error(error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     loadConfig()
-  }, [])
+  }, [loadConfig])
 
   const markDirty = (key: ConfigKey) => {
     setDirtyKeys((prev) => (prev.includes(key) ? prev : [...prev, key]))
@@ -110,6 +136,11 @@ export default function AdminConfigPage() {
         body: JSON.stringify({ key, value: payload }),
       })
 
+      if (response.status === 401) {
+        setAuthState('unauthenticated')
+        throw new Error('Sitzung abgelaufen. Bitte erneut anmelden.')
+      }
+
       if (!response.ok) {
         throw new Error('Speichern fehlgeschlagen')
       }
@@ -128,6 +159,49 @@ export default function AdminConfigPage() {
       }))
     } finally {
       setSavingKey(null)
+    }
+  }
+
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setLoginError(null)
+    setLoginLoading(true)
+
+    try {
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ pin: loginPin }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+        const errorMessage = typeof data.error === 'string' ? data.error : 'Anmeldung fehlgeschlagen.'
+        throw new Error(errorMessage)
+      }
+
+      setLoginPin('')
+      setAuthState('authenticated')
+      await loadConfig()
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : 'Anmeldung fehlgeschlagen.')
+    } finally {
+      setLoginLoading(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' })
+    } catch (error) {
+      console.error('Logout error', error)
+    } finally {
+      setAuthState('unauthenticated')
+      setConfig(defaultAppConfig)
+      setDirtyKeys([])
+      resetSectionStatus()
     }
   }
 
@@ -342,14 +416,73 @@ export default function AdminConfigPage() {
     return null
   }
 
+  if (authState !== 'authenticated') {
+    if (authState === 'unknown' && loading) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-slate-50">
+          <div className="flex items-center gap-2 text-slate-500">
+            <Loader2 className="h-5 w-5 animate-spin" /> Zugang wird geprüft ...
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+        <Card className="w-full max-w-md border border-slate-200 shadow-sm">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-semibold text-slate-900">Admin-Anmeldung</CardTitle>
+            <CardDescription>
+              Bitte geben Sie den PIN aus der Serverkonfiguration ein, um den Admin-Bereich zu öffnen.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="admin-pin">Admin-PIN</Label>
+                <Input
+                  id="admin-pin"
+                  type="password"
+                  value={loginPin}
+                  autoComplete="current-password"
+                  placeholder="PIN eingeben"
+                  onChange={(event) => setLoginPin(event.target.value)}
+                />
+              </div>
+              {loginError ? <p className="text-sm text-red-600">{loginError}</p> : null}
+              <Button
+                type="submit"
+                className="w-full bg-[#0071C5] hover:bg-[#005a9e]"
+                disabled={loginLoading || loginPin.trim().length === 0}
+              >
+                {loginLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Anmeldung läuft ...
+                  </>
+                ) : (
+                  'Anmelden'
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
       <div className="mx-auto max-w-5xl space-y-6">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-semibold text-slate-900">Admin-Konfigurationsbereich</h1>
-          <p className="text-sm text-slate-600">
-            Aktualisieren Sie Steuersätze, Abzüge und Infotexte zentral in diesem Bereich.
-          </p>
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold text-slate-900">Admin-Konfigurationsbereich</h1>
+            <p className="text-sm text-slate-600">
+              Aktualisieren Sie Steuersätze, Abzüge und Infotexte zentral in diesem Bereich.
+            </p>
+          </div>
+          <Button variant="outline" onClick={handleLogout} className="self-start">
+            Abmelden
+          </Button>
         </header>
 
         <Separator />
