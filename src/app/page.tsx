@@ -141,7 +141,7 @@ export default function BruttoNettoRechner() {
         <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
           {/* Input Card */}
           <Card className="shadow-sm border border-gray-200 bg-white">
-            <CardHeader className="bg-[rgb(0,13,197)] text-white">
+            <CardHeader className="bg-[rgb(0,13,197)] text-white rounded-t-lg px-5 py-3 -mt-6 mx-0">
               <CardTitle className="flex items-center gap-2 font-semibold">
                 <Euro className="h-5 w-5" />
                 Gehaltsdaten
@@ -293,7 +293,7 @@ export default function BruttoNettoRechner() {
 
           {/* Results Card */}
           <Card className="shadow-sm border border-gray-200 bg-white">
-            <CardHeader className="bg-gray-800 text-white">
+            <CardHeader className="bg-gray-800 text-white rounded-t-lg px-5 py-3 -mt-6 mx-0">
               <CardTitle className="flex items-center gap-2 font-semibold">
                 <Info className="h-5 w-5" />
                 Berechnungsergebnis
