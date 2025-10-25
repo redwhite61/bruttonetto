@@ -70,7 +70,7 @@ npm run build
 npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see your application running.
+Open [http://localhost:3000](http://localhost:3000) to see your application running. Set the `PORT` environment variable before `npm run dev` if you prefer a different port.
 
 ## 🔐 Admin-Zugang konfigurieren
 
