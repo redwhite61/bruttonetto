@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Calculator, Euro, Info, TrendingUp, Clock, Calendar } from 'lucide-react'
+import { Calculator, Euro, Info } from 'lucide-react'
 import { AppConfig, defaultAppConfig } from '@/lib/default-config'
 
 interface CalculationResult {
@@ -98,6 +98,89 @@ export default function BruttoNettoRechner() {
     })} %`
 
   const socialInsurance = appConfig.socialInsurance
+  const formatCurrency = (value: number) =>
+    value.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })
+  const shareOfGross = (amount: number, gross: number) => {
+    if (gross <= 0) {
+      return 0
+    }
+
+    return Math.min(100, Math.max(0, (amount / gross) * 100))
+  }
+
+  const buildBreakdownRows = (calculation: CalculationResult) => {
+    const rows: Array<{ key: string; label: string; amount: number; color: string }> = [
+      {
+        key: 'netto',
+        label: 'Nettoeinkommen',
+        amount: calculation.netSalary,
+        color: 'bg-emerald-500',
+      },
+      {
+        key: 'incomeTax',
+        label: 'Lohnsteuer',
+        amount: calculation.incomeTax,
+        color: 'bg-sky-500',
+      },
+      {
+        key: 'pension',
+        label: 'Rentenversicherung',
+        amount: calculation.socialInsurance.pension,
+        color: 'bg-indigo-400',
+      },
+      {
+        key: 'health',
+        label: 'Krankenversicherung',
+        amount: calculation.socialInsurance.health,
+        color: 'bg-purple-400',
+      },
+      {
+        key: 'care',
+        label: 'Pflegeversicherung',
+        amount: calculation.socialInsurance.care,
+        color: 'bg-amber-400',
+      },
+      {
+        key: 'unemployment',
+        label: 'Arbeitslosenversicherung',
+        amount: calculation.socialInsurance.unemployment,
+        color: 'bg-rose-400',
+      },
+    ]
+
+    if (calculation.churchTax > 0) {
+      rows.splice(3, 0, {
+        key: 'churchTax',
+        label: 'Kirchensteuer',
+        amount: calculation.churchTax,
+        color: 'bg-cyan-400',
+      })
+    }
+
+    if (calculation.solidarityTax > 0) {
+      rows.splice(4, 0, {
+        key: 'solidarityTax',
+        label: 'Solidaritätszuschlag',
+        amount: calculation.solidarityTax,
+        color: 'bg-teal-400',
+      })
+    }
+
+    rows.push({
+      key: 'totalDeductions',
+      label: 'Gesamtabzüge',
+      amount: calculation.totalDeductions,
+      color: 'bg-orange-400',
+    })
+
+    return rows
+  }
+
+  const breakdownRows = result ? buildBreakdownRows(result) : []
+  const netShare = result ? shareOfGross(result.netSalary, result.grossSalary) : 0
+  const donutStyle = {
+    background: `conic-gradient(#34d399 ${netShare}%, rgba(255,255,255,0.08) ${netShare}% 100%)`,
+  }
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -343,148 +426,107 @@ export default function BruttoNettoRechner() {
                 Ihre detaillierte Gehaltsaufschlüsselung
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="p-0">
               {result ? (
-                <div className="space-y-5">
-                  {/* Main Result */}
-                  <div className="bg-[#0071C5] p-6 rounded-lg text-white">
-                    <div className="flex justify-between items-center mb-4">
-                      <span className="text-white/80">Bruttogehalt (monatlich)</span>
-                      <span>{result.grossSalary.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-4 border-t border-white/20">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5" />
-                        <span>Nettogehalt (monatlich)</span>
-                      </div>
-                      <span className="text-2xl">{result.netSalary.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
-                    </div>
-                  </div>
-
-                  {/* Yearly & Hourly Stats */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
-                      <div className="flex items-center gap-2 text-gray-600 mb-2">
-                        <Calendar className="h-4 w-4" />
-                        <span className="text-sm">Jährlich</span>
-                      </div>
-                      <div className="flex flex-col gap-1 text-gray-900">
-                        <div>
-                          <span className="text-xs uppercase tracking-wide text-gray-500">Netto</span>
-                          <div>{result.yearly.netSalary.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
+                <div className="rounded-b-lg bg-[#0f172a]">
+                  <div className="p-6 space-y-8">
+                    <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-6">
+                        <div className="relative h-28 w-28 shrink-0">
+                          <div className="absolute inset-0 rounded-full" style={donutStyle} />
+                          <div className="absolute inset-0 rounded-full border border-white/10" />
+                          <div className="absolute inset-[0.65rem] flex flex-col items-center justify-center rounded-full bg-[#0f172a] text-center">
+                            <span className="text-[10px] font-medium uppercase tracking-[0.25em] text-white/50">Netto</span>
+                            <span className="mt-1 text-lg font-semibold text-white">{netShare.toFixed(0)}%</span>
+                          </div>
                         </div>
                         <div>
-                          <span className="text-xs uppercase tracking-wide text-gray-500">Brutto</span>
-                          <div>{result.yearly.grossSalary.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
+                          <p className="text-xs uppercase tracking-[0.3em] text-white/50">Bruttoeinkommen</p>
+                          <p className="mt-2 text-3xl font-semibold text-white">{formatCurrency(result.grossSalary)}</p>
+                          <p className="mt-1 text-sm text-white/60">monatlich</p>
+                        </div>
+                      </div>
+                      <div className="grid w-full max-w-xs gap-4 sm:text-right">
+                        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                          <p className="text-[11px] uppercase tracking-[0.3em] text-white/50">Nettogehalt</p>
+                          <p className="mt-2 text-xl font-semibold text-white">{formatCurrency(result.netSalary)}</p>
+                          <p className="text-xs text-white/50">monatlich</p>
+                        </div>
+                        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                          <p className="text-[11px] uppercase tracking-[0.3em] text-white/50">Gesamtabzüge</p>
+                          <p className="mt-2 text-xl font-semibold text-white">-{formatCurrency(result.totalDeductions)}</p>
+                          <p className="text-xs text-white/50">Effektive Belastung {((result.totalDeductions / result.grossSalary) * 100).toFixed(1)}%</p>
                         </div>
                       </div>
                     </div>
-                    <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
-                      <div className="flex items-center gap-2 text-gray-600 mb-2">
-                        <Clock className="h-4 w-4" />
-                        <span className="text-sm">Stundenlohn</span>
-                      </div>
-                      <div className="flex flex-col gap-1 text-gray-900">
-                        <div>
-                          <span className="text-xs uppercase tracking-wide text-gray-500">Netto</span>
-                          <div>{result.hourly.net.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
-                        </div>
-                        <div>
-                          <span className="text-xs uppercase tracking-wide text-gray-500">Brutto</span>
-                          <div>{result.hourly.gross.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-500 mt-2">
-                        {result.hourly.weeklyHours}h/Woche
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Tax Deductions */}
-                  <div className="bg-white p-5 rounded-lg border border-gray-200">
-                    <h4 className="text-gray-900 mb-4 flex items-center gap-2 pb-2 border-b border-gray-200">
-                      Steuerabzüge (monatlich)
-                    </h4>
-                    <div className="space-y-2.5">
-                      <div className="flex justify-between text-sm text-gray-700">
-                        <span>Lohnsteuer</span>
-                        <span className="text-gray-900">-{result.incomeTax.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
-                      </div>
-                      {result.churchTax > 0 && (
-                        <div className="flex justify-between text-sm text-gray-700">
-                          <span>Kirchensteuer</span>
-                          <span className="text-gray-900">-{result.churchTax.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
-                        </div>
-                      )}
-                      {result.solidarityTax > 0 && (
-                        <div className="flex justify-between text-sm text-gray-700">
-                          <span>Solidaritätszuschlag</span>
-                          <span className="text-gray-900">-{result.solidarityTax.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between text-sm text-gray-900 pt-2 border-t border-gray-200">
-                        <span>Jährlich Lohnsteuer</span>
-                        <span>-{result.yearly.incomeTax.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
-                      </div>
-                    </div>
-                  </div>
+                    <div className="space-y-4">
+                      {breakdownRows.map((row) => {
+                        const share = shareOfGross(Math.abs(row.amount), result.grossSalary)
+                        const isNet = row.key === 'netto'
+                        const amountLabel = isNet
+                          ? formatCurrency(row.amount)
+                          : `-${formatCurrency(row.amount)}`
 
-                  {/* Social Insurance */}
-                  <div className="bg-white p-5 rounded-lg border border-gray-200">
-                    <h4 className="text-gray-900 mb-4 flex items-center gap-2 pb-2 border-b border-gray-200">
-                      Sozialversicherungen (monatlich)
-                    </h4>
-                    <div className="space-y-2.5">
-                      <div className="flex justify-between text-sm text-gray-700">
-                        <span>Rentenversicherung</span>
-                        <span className="text-gray-900">-{result.socialInsurance.pension.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
-                      </div>
-                      <div className="flex justify-between text-sm text-gray-700">
-                        <span>Krankenversicherung</span>
-                        <span className="text-gray-900">-{result.socialInsurance.health.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
-                      </div>
-                      <div className="flex justify-between text-sm text-gray-700">
-                        <span>Pflegeversicherung</span>
-                        <span className="text-gray-900">-{result.socialInsurance.care.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
-                      </div>
-                      <div className="flex justify-between text-sm text-gray-700">
-                        <span>Arbeitslosenversicherung</span>
-                        <span className="text-gray-900">-{result.socialInsurance.unemployment.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
-                      </div>
-                      <div className="flex justify-between text-sm text-gray-900 pt-2 border-t border-gray-200">
-                        <span>Gesamt Sozialabgaben</span>
-                        <span>-{result.socialInsurance.total.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
-                      </div>
-                      <div className="flex justify-between text-sm text-gray-900">
-                        <span>Jährlich Sozialabgaben</span>
-                        <span>-{result.yearly.socialInsurance.total.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
-                      </div>
+                        return (
+                          <div key={row.key} className="space-y-2">
+                            <div className="flex items-center justify-between text-sm text-white">
+                              <span className="font-medium">{row.label}</span>
+                              <span className="font-semibold">{amountLabel}</span>
+                            </div>
+                            <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                              <div
+                                className={`h-full rounded-full ${row.color}`}
+                                style={{ width: `${share}%` }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
-                  </div>
 
-                  {/* Total Summary */}
-                  <div className="bg-gray-800 p-5 rounded-lg text-white">
-                    <div className="flex justify-between mb-2">
-                      <span>Gesamtabzüge (monatlich)</span>
-                      <span>-{result.totalDeductions.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
-                    </div>
-                    <div className="flex justify-between mb-3">
-                      <span>Gesamtabzüge (jährlich)</span>
-                      <span>-{result.yearly.totalDeductions.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
-                    </div>
-                    <div className="flex justify-between pt-3 border-t border-gray-600">
-                      <span>Effektive Steuerbelastung</span>
-                      <span className="text-[#FFB800]">{((result.totalDeductions / result.grossSalary) * 100).toFixed(1)}%</span>
+                    <div className="grid gap-4 rounded-xl border border-white/10 bg-white/5 p-4 sm:grid-cols-2">
+                      <div>
+                        <p className="text-[11px] uppercase tracking-[0.3em] text-white/50">Jährlich</p>
+                        <div className="mt-3 space-y-2 text-sm text-white/80">
+                          <div className="flex items-center justify-between">
+                            <span>Netto</span>
+                            <span className="font-semibold text-white">{formatCurrency(result.yearly.netSalary)}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Brutto</span>
+                            <span className="font-semibold text-white">{formatCurrency(result.yearly.grossSalary)}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Abzüge</span>
+                            <span className="font-semibold text-white">-{formatCurrency(result.yearly.totalDeductions)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-[0.3em] text-white/50">Stundenlohn</p>
+                        <div className="mt-3 space-y-2 text-sm text-white/80">
+                          <div className="flex items-center justify-between">
+                            <span>Netto</span>
+                            <span className="font-semibold text-white">{formatCurrency(result.hourly.net)}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Brutto</span>
+                            <span className="font-semibold text-white">{formatCurrency(result.hourly.gross)}</span>
+                          </div>
+                        </div>
+                        <p className="mt-3 text-xs text-white/50 sm:text-right">{result.hourly.weeklyHours}h/Woche</p>
+                      </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="text-center text-gray-500 py-16">
-                  <div className="w-20 h-20 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+                <div className="py-16 text-center text-gray-500">
+                  <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gray-100">
                     <Calculator className="h-10 w-10 text-gray-400" />
                   </div>
                   <p className="text-gray-600">Geben Sie Ihre Gehaltsdaten ein</p>
-                  <p className="text-sm text-gray-500 mt-2">und klicken Sie auf "Netto berechnen"</p>
+                  <p className="mt-2 text-sm text-gray-500">und klicken Sie auf "Netto berechnen"</p>
                 </div>
               )}
             </CardContent>
