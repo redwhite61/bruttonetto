@@ -179,8 +179,39 @@ export default function BruttoNettoRechner() {
   const breakdownRows = result ? buildBreakdownRows(result) : []
   const netShare = result ? shareOfGross(result.netSalary, result.grossSalary) : 0
   const donutStyle = {
-    background: `conic-gradient(#34d399 ${netShare}%, rgba(255,255,255,0.08) ${netShare}% 100%)`,
+    background: `conic-gradient(#22c55e ${netShare}%, #E2E8F0 ${netShare}% 100%)`,
   }
+
+  const [progressWidths, setProgressWidths] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    if (!result) {
+      setProgressWidths({})
+      return
+    }
+
+    const rows = buildBreakdownRows(result)
+    const zeroState = rows.reduce<Record<string, number>>((acc, row) => {
+      acc[row.key] = 0
+      return acc
+    }, {})
+
+    setProgressWidths(zeroState)
+
+    const raf = requestAnimationFrame(() => {
+      const target = rows.reduce<Record<string, number>>((acc, row) => {
+        const share = result.grossSalary > 0
+          ? Math.min(100, Math.max(0, (Math.abs(row.amount) / result.grossSalary) * 100))
+          : 0
+        acc[row.key] = share
+        return acc
+      }, {})
+
+      setProgressWidths(target)
+    })
+
+    return () => cancelAnimationFrame(raf)
+  }, [result])
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -426,43 +457,43 @@ export default function BruttoNettoRechner() {
                 Ihre detaillierte Gehaltsaufschlüsselung
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-0">
-              {result ? (
-                <div className="rounded-b-lg bg-[#0f172a]">
-                  <div className="p-6 space-y-8">
-                    <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-6">
-                        <div className="relative h-28 w-28 shrink-0">
-                          <div className="absolute inset-0 rounded-full" style={donutStyle} />
-                          <div className="absolute inset-0 rounded-full border border-white/10" />
-                          <div className="absolute inset-[0.65rem] flex flex-col items-center justify-center rounded-full bg-[#0f172a] text-center">
-                            <span className="text-[10px] font-medium uppercase tracking-[0.25em] text-white/50">Netto</span>
-                            <span className="mt-1 text-lg font-semibold text-white">{netShare.toFixed(0)}%</span>
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.3em] text-white/50">Bruttoeinkommen</p>
-                          <p className="mt-2 text-3xl font-semibold text-white">{formatCurrency(result.grossSalary)}</p>
-                          <p className="mt-1 text-sm text-white/60">monatlich</p>
+          <CardContent className="p-6">
+            {result ? (
+                <div className="space-y-8">
+                  <div className="flex flex-col gap-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-6">
+                      <div className="relative h-28 w-28 shrink-0">
+                        <div className="absolute inset-0 rounded-full" style={donutStyle} />
+                        <div className="absolute inset-0 rounded-full border border-gray-200" />
+                        <div className="absolute inset-[0.65rem] flex flex-col items-center justify-center rounded-full bg-white text-center">
+                          <span className="text-[10px] font-medium uppercase tracking-[0.25em] text-gray-400">Netto</span>
+                          <span className="mt-1 text-lg font-semibold text-gray-900">{netShare.toFixed(0)}%</span>
                         </div>
                       </div>
-                      <div className="grid w-full max-w-xs gap-4 sm:text-right">
-                        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                          <p className="text-[11px] uppercase tracking-[0.3em] text-white/50">Nettogehalt</p>
-                          <p className="mt-2 text-xl font-semibold text-white">{formatCurrency(result.netSalary)}</p>
-                          <p className="text-xs text-white/50">monatlich</p>
-                        </div>
-                        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                          <p className="text-[11px] uppercase tracking-[0.3em] text-white/50">Gesamtabzüge</p>
-                          <p className="mt-2 text-xl font-semibold text-white">-{formatCurrency(result.totalDeductions)}</p>
-                          <p className="text-xs text-white/50">Effektive Belastung {((result.totalDeductions / result.grossSalary) * 100).toFixed(1)}%</p>
-                        </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Bruttoeinkommen</p>
+                        <p className="mt-2 text-3xl font-semibold text-gray-900">{formatCurrency(result.grossSalary)}</p>
+                        <p className="mt-1 text-sm text-gray-500">monatlich</p>
                       </div>
                     </div>
+                    <div className="grid w-full max-w-xs gap-4 sm:text-right">
+                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                        <p className="text-[11px] uppercase tracking-[0.3em] text-gray-400">Nettogehalt</p>
+                        <p className="mt-2 text-xl font-semibold text-gray-900">{formatCurrency(result.netSalary)}</p>
+                        <p className="text-xs text-gray-500">monatlich</p>
+                      </div>
+                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                        <p className="text-[11px] uppercase tracking-[0.3em] text-gray-400">Gesamtabzüge</p>
+                        <p className="mt-2 text-xl font-semibold text-gray-900">-{formatCurrency(result.totalDeductions)}</p>
+                        <p className="text-xs text-gray-500">Effektive Belastung {((result.totalDeductions / result.grossSalary) * 100).toFixed(1)}%</p>
+                      </div>
+                    </div>
+                  </div>
 
+                  <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                    <h4 className="text-sm font-semibold text-gray-900">Verteilung der Abzüge</h4>
                     <div className="space-y-4">
                       {breakdownRows.map((row) => {
-                        const share = shareOfGross(Math.abs(row.amount), result.grossSalary)
                         const isNet = row.key === 'netto'
                         const amountLabel = isNet
                           ? formatCurrency(row.amount)
@@ -470,57 +501,57 @@ export default function BruttoNettoRechner() {
 
                         return (
                           <div key={row.key} className="space-y-2">
-                            <div className="flex items-center justify-between text-sm text-white">
-                              <span className="font-medium">{row.label}</span>
-                              <span className="font-semibold">{amountLabel}</span>
+                            <div className="flex items-center justify-between text-sm text-gray-700">
+                              <span className="font-medium text-gray-900">{row.label}</span>
+                              <span className="font-semibold text-gray-900">{amountLabel}</span>
                             </div>
-                            <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                            <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
                               <div
-                                className={`h-full rounded-full ${row.color}`}
-                                style={{ width: `${share}%` }}
+                                className={`h-full rounded-full ${row.color} transition-all duration-700 ease-out`}
+                                style={{ width: `${progressWidths[row.key] ?? 0}%` }}
                               />
                             </div>
                           </div>
                         )
                       })}
                     </div>
+                  </div>
 
-                    <div className="grid gap-4 rounded-xl border border-white/10 bg-white/5 p-4 sm:grid-cols-2">
-                      <div>
-                        <p className="text-[11px] uppercase tracking-[0.3em] text-white/50">Jährlich</p>
-                        <div className="mt-3 space-y-2 text-sm text-white/80">
-                          <div className="flex items-center justify-between">
-                            <span>Netto</span>
-                            <span className="font-semibold text-white">{formatCurrency(result.yearly.netSalary)}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span>Brutto</span>
-                            <span className="font-semibold text-white">{formatCurrency(result.yearly.grossSalary)}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span>Abzüge</span>
-                            <span className="font-semibold text-white">-{formatCurrency(result.yearly.totalDeductions)}</span>
-                          </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                      <p className="text-[11px] uppercase tracking-[0.3em] text-gray-400">Jährlich</p>
+                      <div className="mt-4 space-y-3 text-sm text-gray-600">
+                        <div className="flex items-center justify-between">
+                          <span>Netto</span>
+                          <span className="font-semibold text-gray-900">{formatCurrency(result.yearly.netSalary)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Brutto</span>
+                          <span className="font-semibold text-gray-900">{formatCurrency(result.yearly.grossSalary)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Abzüge</span>
+                          <span className="font-semibold text-gray-900">-{formatCurrency(result.yearly.totalDeductions)}</span>
                         </div>
                       </div>
-                      <div>
-                        <p className="text-[11px] uppercase tracking-[0.3em] text-white/50">Stundenlohn</p>
-                        <div className="mt-3 space-y-2 text-sm text-white/80">
-                          <div className="flex items-center justify-between">
-                            <span>Netto</span>
-                            <span className="font-semibold text-white">{formatCurrency(result.hourly.net)}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span>Brutto</span>
-                            <span className="font-semibold text-white">{formatCurrency(result.hourly.gross)}</span>
-                          </div>
+                    </div>
+                    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                      <p className="text-[11px] uppercase tracking-[0.3em] text-gray-400">Stundenlohn</p>
+                      <div className="mt-4 space-y-3 text-sm text-gray-600">
+                        <div className="flex items-center justify-between">
+                          <span>Netto</span>
+                          <span className="font-semibold text-gray-900">{formatCurrency(result.hourly.net)}</span>
                         </div>
-                        <p className="mt-3 text-xs text-white/50 sm:text-right">{result.hourly.weeklyHours}h/Woche</p>
+                        <div className="flex items-center justify-between">
+                          <span>Brutto</span>
+                          <span className="font-semibold text-gray-900">{formatCurrency(result.hourly.gross)}</span>
+                        </div>
                       </div>
+                      <p className="mt-4 text-xs text-gray-500 sm:text-right">{result.hourly.weeklyHours}h/Woche</p>
                     </div>
                   </div>
                 </div>
-              ) : (
+            ) : (
                 <div className="py-16 text-center text-gray-500">
                   <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gray-100">
                     <Calculator className="h-10 w-10 text-gray-400" />
